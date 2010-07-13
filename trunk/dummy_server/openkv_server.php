@@ -1,5 +1,5 @@
 <?php
-echo "{$_GET['cb']}({'t': '{$_GET['t']}', 'result': 0, 'message': 'OK', 'v': 'hello', 'rid': {$_GET['rid']}})";
+echo "{$_GET['callback']}({'t': '{$_GET['t']}', 'result': 0, 'message': 'OK', 'v': 'hello', 'rid': {$_GET['rid']}})";
 
 
 //print_r($_GET);
