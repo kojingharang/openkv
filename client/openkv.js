@@ -39,7 +39,7 @@ RDict.prototype = {
 	},
 	call_server: function(dict)
 	{
-		var param = "&cb=RDict_global_callback&p="+this.passcode+"&rid="+RDict_request_ID+"&";
+		var param = "&callback=RDict_global_callback&p="+this.passcode+"&rid="+RDict_request_ID+"&";
 		for(var k in dict)
 		{
 			param += k + "=" + dict[k] + "&";
