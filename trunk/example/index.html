@@ -1,0 +1,37 @@
+<html>
+<head>
+	<script type="text/javascript" src="./prototype.js" charset="Shift_JIS"></script>
+	<script type="text/javascript" src="../client/openkv.js" charset="Shift_JIS"></script>
+	<script type="text/javascript">
+		function put_and_get()
+		{
+			var dict = new RDict($("baseurl").value);
+			dict.put("key0", $("input").value, function() {
+				dict.get("key0", function(value) {
+					$("output").value = value;
+					$("test_result").innerHTML = $("input").value==$("output").value ? "OK":"NG";
+					$("log").innerHTML = "<pre>" + dict.toString() + "</pre>";
+					//alert(dict.toString());
+				});
+			});
+		}
+		//alert(dict.toString());
+	</script>
+</head>
+<body>
+
+<table>
+<tr><td>BaseURL</td><td><input type="text" id="baseurl" size=80 value="http://pa-n.com/openkv/dummy_server/openkv_server.php?s=example_service"></td></tr>
+<tr><td>Input</td><td><input type="text" id="input" value="foo"></td></tr>
+<tr><td></td><td><button onClick="put_and_get();">put get test</button></td></tr>
+<tr><td>Output</td><td><input type="text" id="output"></td></tr>
+<tr><td>Test result</td><td><span style="color: red;" id="test_result"></span></td></tr>
+<tr><td>Log</td><td><span id="log"></span></td></tr>
+</table>
+
+</body>
+</html>
+
+
+
+
