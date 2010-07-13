@@ -7,20 +7,20 @@ var RDict = function(baseurl)
 	this.callback = {};
 };
 
-var RDict_request_ID = 0;
-var RDict_callback = {};
+var RDict_callback = null;
+var RDict_last_action = "";
 var RDict_log = [];
 var RDict_global_callback = function(value)
 {
 	//alert("RDict_global_callback: "+Object.toJSON(value));
 	RDict_log.push("Response << " + Object.toJSON(value));
-	if(value["t"]=="get")
+	if(RDict_last_action=="get")
 	{
-		RDict_callback[ value["rid"] ]( value["v"] );
+		if(RDict_callback) RDict_callback( value["value"] );
 	}
-	if(value["t"]=="put")
+	if(RDict_last_action=="put")
 	{
-		RDict_callback[ value["rid"] ]();
+		if(RDict_callback) RDict_callback();
 	}
 };
 
@@ -39,7 +39,10 @@ RDict.prototype = {
 	},
 	call_server: function(dict)
 	{
-		var param = "&callback=RDict_global_callback&p="+this.passcode+"&rid="+RDict_request_ID+"&";
+		// add random param to avoid be in cache
+		dict["random"] = Math.floor(Math.random()*65536);
+		
+		var param = "&callback=RDict_global_callback&p="+this.passcode+"&";
 		for(var k in dict)
 		{
 			param += k + "=" + dict[k] + "&";
@@ -51,15 +54,15 @@ RDict.prototype = {
 	{
 		return "(OpenKV) baseurl: "+this.baseurl+"\n"+(RDict_log.join("\n"));
 	},
-	add_callback: function(callback)
+	save_context: function(action, callback)
 	{
-		RDict_request_ID++;
-		RDict_callback[ RDict_request_ID ] = callback;
+		RDict_callback = callback;
+		RDict_last_action = action;
 		//alert(Object.toJSON(RDict_callback));
 	},
 	put: function(key, value, cont)
 	{
-		this.add_callback(cont);
+		this.save_context("put", cont);
 		this.call_server({
 			"t": "put",
 			"k": key,
@@ -72,7 +75,7 @@ RDict.prototype = {
 	// @return      Dict
 	get: function(key, cont)
 	{
-		this.add_callback(cont);
+		this.save_context("get", cont);
 		this.call_server({
 			"t": "get",
 			"k": key
