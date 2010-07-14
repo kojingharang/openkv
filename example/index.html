@@ -6,10 +6,18 @@
 		function put_and_get()
 		{
 			var dict = new RDict($("baseurl").value);
-			dict.put("key0", $("input").value, function() {
+			dict.put("key0", $("input0").value, function() {
 				dict.get("key0", function(value) {
-					$("output").value = value;
-					$("test_result").innerHTML = $("input").value==$("output").value ? "OK":"NG";
+					$("output0").value = value;
+					$("test_result0").innerHTML = $("input0").value==$("output0").value ? "OK":"NG";
+					$("log").innerHTML = "<pre>" + dict.toString() + "</pre>";
+					//alert(dict.toString());
+				});
+			});
+			dict.put("key1", $("input1").value, function() {
+				dict.get("key1", function(value) {
+					$("output1").value = value;
+					$("test_result1").innerHTML = $("input1").value==$("output1").value ? "OK":"NG";
 					$("log").innerHTML = "<pre>" + dict.toString() + "</pre>";
 					//alert(dict.toString());
 				});
@@ -22,10 +30,10 @@
 
 <table>
 <tr><td>BaseURL</td><td><input type="text" id="baseurl" size=80 value="http://openkvs.appspot.com/openkv?s=example_service"></td></tr>
-<tr><td>Input</td><td><input type="text" id="input" value="foo"></td></tr>
+<tr><td>Input</td><td><input type="text" id="input0" value="foo"><input type="text" id="input1" value="bar"></td></tr>
 <tr><td></td><td><button onClick="put_and_get();">put get test</button></td></tr>
-<tr><td>Output</td><td><input type="text" id="output"></td></tr>
-<tr><td>Test result</td><td><span style="color: red;" id="test_result"></span></td></tr>
+<tr><td>Output</td><td><input type="text" id="output0"><input type="text" id="output1"></td></tr>
+<tr><td>Test result</td><td><span style="color: red;" id="test_result0"></span><span style="color: red;" id="test_result1"></span></td></tr>
 <tr><td>Log</td><td><span id="log"></span></td></tr>
 </table>
 

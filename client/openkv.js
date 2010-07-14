@@ -4,23 +4,32 @@ var RDict = function(baseurl)
 {
 	this.baseurl = baseurl;
 	this.passcode = "";
-	this.callback = {};
 };
 
-var RDict_callback = null;
-var RDict_last_action = "";
+// rid -> {callback: callback, t: get|put }
+var RDict_context = {};
+var RDict_request_ID = 0;
 var RDict_log = [];
 var RDict_global_callback = function(value)
 {
-	//alert("RDict_global_callback: "+Object.toJSON(value));
-	RDict_log.push("Response << " + Object.toJSON(value));
-	if(RDict_last_action=="get")
+	var s_value = Object.toJSON ? Object.toJSON(value) : "";
+	//alert("RDict_global_callback: " + s_value);
+	RDict_log.push("Response << " + s_value );
+	var context = RDict_context[ value["rid"] ];
+	if(!context) return;
+	var t = context["t"];
+	var callback = context["callback"];
+	
+	if(callback)
 	{
-		if(RDict_callback) RDict_callback( value["value"] );
-	}
-	if(RDict_last_action=="put")
-	{
-		if(RDict_callback) RDict_callback();
+		if(t=="get")
+		{
+			callback( value["value"] );
+		}
+		if(t=="put")
+		{
+			callback();
+		}
 	}
 };
 
@@ -42,7 +51,7 @@ RDict.prototype = {
 		// add random param to avoid be in cache
 		dict["random"] = Math.floor(Math.random()*65536);
 		
-		var param = "&callback=RDict_global_callback&p="+this.passcode+"&";
+		var param = "&callback=RDict_global_callback&p="+this.passcode+"&rid="+RDict_request_ID+"&";
 		for(var k in dict)
 		{
 			param += k + "=" + dict[k] + "&";
@@ -56,9 +65,9 @@ RDict.prototype = {
 	},
 	save_context: function(action, callback)
 	{
-		RDict_callback = callback;
-		RDict_last_action = action;
-		//alert(Object.toJSON(RDict_callback));
+		RDict_request_ID++;
+		RDict_context[RDict_request_ID] = {"callback": callback, "t": action};
+		//alert(Object.toJSON(RDict_context));
 	},
 	put: function(key, value, cont)
 	{
