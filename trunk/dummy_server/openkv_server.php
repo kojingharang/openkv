@@ -1,5 +1,8 @@
 <?php
-echo "{$_GET['callback']}({'result': 0, 'message': 'OK', 'value': 'hello')";
+$rid      = $_GET['rid'] ? $_GET['rid'] : 0;
+$callback = $_GET['callback'] ? $_GET['callback'] : "openkv_callback";
+
+echo "$callback( { 'result': 0, 'message': 'OK', 'value': 'hello', 'rid': $rid } )";
 
 
 //print_r($_GET);
