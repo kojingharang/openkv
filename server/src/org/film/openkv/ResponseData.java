@@ -87,6 +87,9 @@ public class ResponseData {
 
 		resMap.put("result", result);
 		resMap.put("message", message);
+		if(reqId != null) {
+			resMap.put("rid", reqId);
+		}
 		
 		String json = JSON.encode(resMap);
 		
