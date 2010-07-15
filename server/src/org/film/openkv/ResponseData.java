@@ -21,7 +21,12 @@ public class ResponseData {
 	public ResponseData(String result, String message, String reqId, String callback) {
 		this.result = result;
 		this.message = message;
-		this.callback = callback;
+		if(callback == null) {
+			this.callback = "okv_callback";
+		}
+		else {
+			this.callback = callback;
+		}
 		this.reqId = reqId;
 	}
 	
