@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+<head>
+	<style type="text/css">
+	<!--
+	table.field tr td {
+		width: 80px;
+		height: 80px;
+		border: solid black;
+		text-align: center;
+		vertical-align: center;
+	}
+	-->
+	</style>
+	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
+	<script type="text/javascript">
+		var dict = new RDict("http://openkvs.appspot.com/openkv?s=example_tictactoe");
+		var myID = uniq_id("UserID");
+		var gameID = "";
+		var the_gameState = { "field": [0,0,0,0,0,0,0,0,0], "turn": "" };
+		//alert(myID);
+		
+		function uniq_id(prefix) { return prefix + "_" + /*new Date() + "_" + */ Math.floor( Math.random() * 100000 ); }
+		
+		function main()
+		{
+			//alert("begin main");
+			updateState();
+			var cont = function() {
+				//alert("end main");
+				setTimeout("main()", 1000);
+			}
+			if(gameID)
+			{
+				play(cont);
+			}
+			else
+			{
+				try_to_start_game(cont);
+			}
+		}
+		
+		function try_to_start_game(cont)
+		{
+			//alert("try_to_start_game");
+			// check myID status. if other side starts game, get gameID.
+			dict.get("gameID_"+myID, function(value) {
+				//alert("gameID_myID: "+value);
+				if(value)
+				{
+					//alert("set gameID"+value);
+					gameID = value;
+				}
+				if(gameID)
+				{
+					//alert("gameID: "+gameID);
+					play(cont);
+					return;
+				}
+				
+				// get ID list
+				dict.get("lobby", function(value) {
+					var lobby = [];
+					try {
+						lobby = eval("("+value+")");
+					} catch(e) {}
+					
+					if(!lobby) lobby=[];
+					var myID_inserted = 0;
+					for(var i=0;i<lobby.length;i++)
+					{
+						//alert("lobby["+i+"]: "+lobby[i]);
+						if(lobby[i]==myID)
+						{
+							myID_inserted = 1;
+						}
+						else
+						{
+							var otherID = lobby[i];
+							
+							// remove otherID from lobby
+							lobby.splice(i, 1);
+							
+							// remove myID from lobby
+							for(var j=0;j<lobby.length;j++) if(lobby[j]==myID) lobby.splice(j, 1);
+							
+							dict.put("lobby", Object.toJSON(lobby), function(){
+								//alert("updated lobby: "+Object.toJSON(lobby));
+								start_game(myID, otherID);
+								play(cont);
+							});
+							return;
+						}
+					}
+					// add myID to lobby
+					if(!myID_inserted)
+					{
+						lobby.unshift(myID);
+						while(lobby.length>10) lobby.pop();
+						dict.put("lobby", Object.toJSON(lobby), function(){
+							//alert("updated lobby: "+Object.toJSON(lobby));
+							cont();
+						});
+					}
+					else
+					{
+						cont();
+					}
+				});
+			});
+		}
+		
+		function start_game(myID, otherID)
+		{
+			//alert("start_game "+myID+" "+otherID);
+			// generate GameID
+			gameID = uniq_id("GameID");
+			var first_turn = Math.random() * 100 > 50 ? myID : otherID;
+			the_gameState = { "field": [0, 0, 0, 0, 0, 0, 0, 0, 0], "players": [myID, otherID], "image": (first_turn==myID ? [1, 2] : [2, 1]), "turn": first_turn };
+			dict.put(gameID, Object.toJSON(the_gameState));
+			// update state of two by GameID
+			dict.put("gameID_"+myID, gameID);
+			dict.put("gameID_"+otherID, gameID);
+		}
+		
+		function play(cont)
+		{
+			//alert("play");
+			dict.get(gameID, function(value) {
+				var gameState = {};
+				try {
+					gameState = eval("("+value+")");
+				} catch(e) {}
+				the_gameState = gameState;
+				var field = gameState["field"];
+				var turn = gameState["turn"];
+				if(!field || !turn) { cont(); return; }
+				//alert("field: "+field+" turn: "+turn);
+				
+				updateState();
+				setField();
+				cont();
+			});
+		}
+		function setField()
+		{
+			var field = the_gameState["field"];
+			var img = ["n", "o", "x"];
+			for(var i=0;i<9;i++)
+			{
+				var code=";";
+				if(field[i]==0) code = 'put('+i+');'
+				$("field"+i).innerHTML = "<img src='"+img[ field[i] ]+".png' onClick='javascript:"+code+"'>";
+			}
+		}
+		function updateState()
+		{
+			var s = [];
+			s.push("myID: "+myID);
+			s.push("gameID: "+gameID);
+			s.push("Turn: "+the_gameState["turn"]);
+			s.push("("+(the_gameState["turn"]==myID ? "You":"Other side")+")");
+			$("state").innerHTML = "<pre>"+s.join("\n")+"</pre>";
+		}
+		function put(id)
+		{
+			//alert("put: "+id);
+			if(myID!=the_gameState["turn"]) return;
+			
+			the_gameState["field"][id] = the_gameState["image"][ the_gameState["players"][0]==myID ? 0 : 1 ];
+			setField();
+			
+			var otherID = the_gameState["players"][0]==myID ? 1 : 0;
+			the_gameState["turn"] = the_gameState["players"][ otherID ];
+			dict.put(gameID, Object.toJSON(the_gameState), function() {
+				//alert("updated the_gameState");
+			});
+		}
+		//alert(dict.toString());
+	</script>
+</head>
+<body style="" onLoad="javascript:setField();main();">
+
+<!--<button style="padding: 5px 15px" onClick="javascript:main();">main()</button>-->
+
+<span id="state"></span>
+
+<table class="field">
+	<tr>
+		<td style="border-width: 0px 1px 1px 0px"><span id="field0"></span></td>
+		<td style="border-width: 0px 0px 1px 0px"><span id="field1"></span></td>
+		<td style="border-width: 0px 0px 1px 1px"><span id="field2"></span></td>
+	</tr>
+	<tr>
+		<td style="border-width: 0px 1px 0px 0px"><span id="field3"></span></td>
+		<td style="border-width: 0px 0px 0px 0px"><span id="field4"></span></td>
+		<td style="border-width: 0px 0px 0px 1px"><span id="field5"></span></td>
+	</tr>
+	<tr>
+		<td style="border-width: 1px 1px 0px 0px"><span id="field6"></span></td>
+		<td style="border-width: 1px 0px 0px 0px"><span id="field7"></span></td>
+		<td style="border-width: 1px 0px 0px 1px"><span id="field8"></span></td>
+	</tr>
+</table>
+
+
+<br>
+<br>
+<a href="demo.html">2 window demo</a>
+
+</body>
+</html>
+
+
+
+

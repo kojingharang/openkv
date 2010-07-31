@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
+<head>
+	<style type="text/css">
+	<!--
+	table tr td { vertical-align: top; }
+	textarea {
+		border-bottom-left-radius: 3px 3px;
+		border-bottom-right-radius: 3px 3px;
+		border-bottom-right-radius: 3px 3px;
+		border-top-left-radius: 3px 3px;
+		border-top-left-radius: 3px 3px;
+		border-top-right-radius: 3px 3px;
+		border-top-right-radius: 3px 3px;
+	}
+	.entry {
+		border-top: 1px solid #EEE;
+	}
+	.char_left_notice {
+		color: #CCC;
+		font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+		font-size: 24px;
+		font-weight: bold;
+		line-height: 22px;
+	}
+	
+	-->
+	</style>
+	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
+	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
+	<script type="text/javascript">
+		var dict = new RDict("http://openkvs.appspot.com/openkv?s=example_service");
+		
+		function post()
+		{
+			var postdata = {
+				"nickname": $("nickname").value,
+				"content":  $("content").value
+			};
+			//alert("postdata: "+ postdata);
+			
+			dict.get("simple_bbs_thread0", function(value) {
+				var rm = $("nickname").value=="rm -Rf";
+				//alert("got: "+value);
+				var bbs_data = [];
+				try {
+					var bbs_data = eval("("+value+")");
+				} catch(e) {}
+				if(!bbs_data.unshift || rm) bbs_data = [];
+				//alert("bbs_data: "+bbs_data);
+				if(!rm) bbs_data.unshift(postdata);
+				
+				dict.put("simple_bbs_thread0", Object.toJSON(bbs_data), function() {
+					//$("log").innerHTML += "<pre>" + Object.toJSON(postdata) + "</pre>";
+					show_posts();
+					$("content").value="";
+				});
+			});
+		}
+		function show_posts()
+		{
+			dict.get("simple_bbs_thread0", function(value) {
+				//alert("show(): "+value);
+				//$("bbs").innerHTML = Object.toJSON(value);
+				var data = {};
+				try {
+					data = eval("("+value+")");
+				} catch(e) {}
+				var render = [];
+				for(var i=0;i<data.length;i++)
+				{
+					render.push("<div class='entry'><span style='font-weight:bold; color:#09998f'>"+data[i]["nickname"]+"</span>&nbsp;&nbsp;<span>"+data[i]["content"]+"</span></div>");
+				}
+				$("bbs").innerHTML = "<br>" + render.join("<br><br>");
+			});
+		}
+		function update_char_left_notice()
+		{
+			$("char_left_notice").innerHTML = 140 - $("content").value.length;
+		}
+		//alert(dict.toString());
+	</script>
+</head>
+<body style="background-color: #404040" onLoad="javascript:show_posts();setInterval('update_char_left_notice()', 500);">
+
+<table style="width: 50%; margin: 0 auto 0 auto; padding: 20px; background-color: white;">
+<tr><td><input type="text" id="nickname" value="Anonymous Coward">           <span id="char_left_notice" class="char_left_notice">140</span></td></tr>
+<tr><td><textarea id="content" rows=3 style="width: 100%"></textarea></td></tr>
+<tr><td style=""><button style="padding: 5px 15px" onClick="javascript:post();">Post</button><!-- <button onClick="javascript:show_posts();">Reload</button> --></td></tr>
+<tr><td><span id="bbs"></span></td></tr>
+<!--<tr><td>Log</td><td><span id="log"></span></td></tr>-->
+</table>
+
+
+</body>
+</html>
+
+
+
+
