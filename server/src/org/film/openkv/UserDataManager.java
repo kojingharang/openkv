@@ -2,6 +2,8 @@ package org.film.openkv;
 
 import static com.google.appengine.api.datastore.DatastoreServiceConfig.Builder.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.google.appengine.api.datastore.DatastoreService;
@@ -10,6 +12,9 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.FilterOperator;
 
 //import com.google.appengine.api.datastore.ReadPolicy.Consistency;
 
@@ -31,6 +36,7 @@ public class UserDataManager {
 	public static UserDataManager getInstance() {
 		return udm;
 	}
+	
 	
 	public UserData get(UserData userData) throws EntityNotFoundException {
 		
@@ -60,24 +66,33 @@ public class UserDataManager {
 		}
 	}
 	
-	public UserData get(String serviceName, String keyName) throws EntityNotFoundException {
 		
-		try {
-			UserData userData = new UserData(serviceName, keyName);
-			Entity entity = ds.get(userData.getKey());
+	public List<UserData> get(String serviceName, String okvKey) {
+		List<UserData> dataList = new ArrayList<UserData>();
+		Query query = new Query(serviceName);
+		query.addFilter("okvKey", FilterOperator.EQUAL, okvKey);
+		PreparedQuery preparedQuery = ds.prepare(query);
+		
+		for(Entity entity : preparedQuery.asIterable()) {
+			UserData userData = new UserData(serviceName, okvKey);
 			userData.setProperties(entity.getProperties());
+			userData.setKey(entity.getKey());
+			dataList.add(userData);
+		}
 			
-			return userData;
-		}
-		catch(EntityNotFoundException e) {
-			throw e;
-		}
+		return dataList;
+
 	}
 	
 	public void set(UserData userData) throws Exception {
 		
 		try {
-			Entity entity = new Entity(userData.getKey());
+			//Entity entity = new Entity(userData.getKey());
+			Entity entity = new Entity(userData.getKindName());
+			
+			String okvKey = userData.getOkvKey();
+			entity.setProperty("okvKey", okvKey);
+			
 			Map<String, Object> props = userData.getProperties();
 			
 			// set properties to an entity

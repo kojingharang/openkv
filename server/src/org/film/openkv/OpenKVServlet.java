@@ -15,7 +15,7 @@ public class OpenKVServlet extends HttpServlet {
 		resp.setCharacterEncoding("UTF-8");
 		
 		String serviceName = req.getParameter("s");
-		String keyName = req.getParameter("k");
+		String keyName = req.getParameter("k"); //  OkvKey
 		String cmd = req.getParameter("t");
 		String callback = req.getParameter("callback");
 		String reqId = req.getParameter("rid");
@@ -59,6 +59,10 @@ public class OpenKVServlet extends HttpServlet {
 	    }
 	    if(keyName == null || keyName.equals("")) {
 	    	sendErrorResponse(resp, "Key is not set.", reqId, callback);
+	    	return;
+	    }
+	    if(value == null || value.equals("")) {
+	    	sendErrorResponse(resp, "value is not set.", reqId, callback);
 	    	return;
 	    }
 		

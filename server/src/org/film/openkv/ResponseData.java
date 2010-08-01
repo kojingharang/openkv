@@ -1,6 +1,8 @@
 package org.film.openkv;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -10,19 +12,23 @@ public class ResponseData {
 	
 	public static final String NGCODE = "1";
 	public static final String OKCODE = "0";
+	public static final String MSG_OK = "OK";
+	public static final String MSG_NG = "NG";
+	private static final String DEFAULT_CALLBACK = "okv_callback";
 	
-	private UserData userData;
+	private List<UserData> userDataList;
 	private String result;
 	private String message;
-	private String callback = "okv_callback";
+	private String callback = DEFAULT_CALLBACK;
 	private String reqId;
 	
 
 	public ResponseData(String result, String message, String reqId, String callback) {
 		this.result = result;
 		this.message = message;
+		this.userDataList = new ArrayList<UserData>();
 		if(callback == null) {
-			this.callback = "okv_callback";
+			this.callback = DEFAULT_CALLBACK;
 		}
 		else {
 			this.callback = callback;
@@ -31,23 +37,39 @@ public class ResponseData {
 	}
 	
 	public ResponseData(UserData userData, String reqId, String callback) {
-		this.userData = userData;
+		if(this.userDataList == null) {
+			this.userDataList = new ArrayList<UserData>();
+		}
+		this.userDataList.add(userData);
 		if(callback == null) {
-			this.callback = "okv_callback";
+			this.callback = DEFAULT_CALLBACK;
 		}
 		else {
 			this.callback = callback;
 		}
 		this.reqId = reqId;
 		this.result = OKCODE;
-		this.message = "OK";
+		this.message = MSG_OK;
 	}
 	
-	public UserData getUserData() {
-		return userData;
+	public ResponseData(List<UserData> userDataList, String reqId, String callback) {
+		this.userDataList = userDataList;
+		if(callback == null) {
+			this.callback = DEFAULT_CALLBACK;
+		}
+		else {
+			this.callback = callback;
+		}
+		this.reqId = reqId;
+		this.result = OKCODE;
+		this.message = MSG_OK;
+	}
+	
+	public List<UserData> getUserDataList() {
+		return userDataList;
 	}
 	public void setUserData(UserData userData) {
-		this.userData = userData;
+		this.userDataList.add(userData);
 	}
 	public String getResult() {
 		return result;
@@ -80,32 +102,36 @@ public class ResponseData {
 	}
 	
 	// Returns JSONP String
-	// openkv_callback({"result": 0, "message": "OK", "value": "hello", "rid":3"})	
+	// openkv_callback({"result": 0, "message": "OK", "value":{[{col1:v1, col2:[a, b]}, {col1:v2, col2:[c,d]}]}, "rid:1"}
 	public String toJSONP() {
-		Map<String, Object> resMap;
-		if(userData != null) {
-			resMap = userData.getProperties();
-		}
-		else {
-		    resMap = new HashMap<String, Object>();
-		}
 
+		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
+		Map<String, Object> resMap = new HashMap<String, Object>();
 		resMap.put("result", result);
 		resMap.put("message", message);
+		
+
 		if(reqId != null) {
 			resMap.put("rid", reqId);
 		}
-		
-		String json = JSON.encode(resMap);
-		
-		StringBuilder builder = new StringBuilder(json.length() + callback.length() + 2);
-		builder.append(callback);
-		builder.append("(");
-		builder.append(json);
-		builder.append(")");
-		
-		return builder.toString();
-	
+
+		for(UserData userData : userDataList) {
+			Map<String, Object> userMap = userData.getProperties();
+			dataList.add(userMap);
+
+		}
+	    resMap.put("value", dataList);
+	    String jsonResponse = JSON.encode(resMap);
+	    
+	    
+	    StringBuilder builder = new StringBuilder(jsonResponse.length() + callback.length() + 2);
+	    builder.append(callback);
+	    builder.append("(");
+	    builder.append(jsonResponse);
+	    builder.append(")");
+	    
+	    return builder.toString();
 	}
+
 	
 }
