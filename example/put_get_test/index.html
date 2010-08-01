@@ -3,7 +3,7 @@
 	<script type="text/javascript" src="../prototype.js" charset="Shift_JIS"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="Shift_JIS"></script>
 	<script type="text/javascript">
-		function put_and_get()
+		function test_put_and_get()
 		{
 			var dict = new RDict($("baseurl").value);
 			dict.put("key0", $("input0").value, function() {
@@ -23,6 +23,21 @@
 				});
 			});
 		}
+		function test_update()
+		{
+			var dict = new RDict($("baseurl").value);
+			dict.put("key_for_update_test", $("update_before").value, function() {
+				dict.update("key_for_update_test", function(value, new_value) {
+					new_value(value + "_AFTER");
+					return 1;
+				}, function() {
+					dict.get("key_for_update_test", function(value) {
+						$("update_after").value = value;
+						$("update_test_result").innerHTML = (value=='"BEFORE_AFTER"') ? "OK":"NG";
+					});
+				});
+			});
+		}
 		//alert(dict.toString());
 	</script>
 </head>
@@ -30,12 +45,22 @@
 
 <table>
 <tr><td>BaseURL</td><td><input type="text" id="baseurl" size=80 value="http://openkvs.appspot.com/openkv?s=example_service"></td></tr>
+<tr><td style="background-color: #C0C0C0">Put and Get Test</td><td></td></tr>
 <tr><td>Input</td><td><input type="text" id="input0" value="foo"><input type="text" id="input1" value="bar"></td></tr>
-<tr><td></td><td><button onClick="put_and_get();">put get test</button></td></tr>
+<tr><td></td><td><button onClick="test_put_and_get();">Put and Get test</button></td></tr>
 <tr><td>Output</td><td><input type="text" id="output0"><input type="text" id="output1"></td></tr>
 <tr><td>Test result</td><td><span style="color: red;" id="test_result0"></span><span style="color: red;" id="test_result1"></span></td></tr>
+<tr><td style="background-color: #C0C0C0">Update Test</td><td></td></tr>
+<tr><td>Data</td><td><input type="text" id="update_before" value='"BEFORE"'><input type="text" id="update_after" value=""></td></tr>
+<tr><td></td><td><button onClick="test_update();">Update test</button></td></tr>
+<tr><td>Test result</td><td><span style="color: red;" id="update_test_result"></span></td></tr>
 <tr><td>Log</td><td><span id="log"></span></td></tr>
 </table>
+
+
+
+
+
 
 <pre>
 The server
