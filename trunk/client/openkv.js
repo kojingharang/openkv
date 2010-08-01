@@ -34,9 +34,6 @@ var RDict_global_callback = function(value)
 };
 
 
-// Put the value identified with the key
-// @param[in] String key
-// @param[in] String value
 RDict.prototype = {
 	loadJSONP: function(url)
 	{
@@ -69,6 +66,10 @@ RDict.prototype = {
 		RDict_context[RDict_request_ID] = {"callback": callback, "t": action};
 		//alert(Object.toJSON(RDict_context));
 	},
+	
+	// Put the value identified with the key
+	// @param[in] String key
+	// @param[in] String value
 	put: function(key, value, cont)
 	{
 		this.save_context("put", cont);
@@ -88,6 +89,38 @@ RDict.prototype = {
 		this.call_server({
 			"t": "get",
 			"k": key
+		});
+	},
+	
+	// Update value identified with the key.
+	// @param[in] String   key
+	// @param[in] function update_func(got_value, new_value func)
+	// @return
+	update: function(key, update_func, cont)
+	{
+		var __this = this;
+		this.get(key, function(value) {
+			var native_value = undefined;
+			try {
+				native_value = eval("("+value+")");
+			} catch(e) {}
+			
+			var __new_value;
+			var __do_update = 0;
+			// update_func is expected to modify native_value
+			update_func(native_value, function(new_value) {
+				__new_value = new_value;
+				__do_update = 1;
+			});
+			if(__do_update)
+			{
+				//alert("do_update: "+Object.toJSON(__new_value));
+				__this.put(key, Object.toJSON(__new_value), cont);
+			}
+			else
+			{
+				cont();
+			}
 		});
 	},
 	
