@@ -2,15 +2,14 @@ package org.film.openkv;
 
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class OpenKVController {
 	
 	
-	// save data 
-	// property name is "value"
-	// this implementation may be changed.
-	public ResponseData putData(String serviceName, String keyName, String propValue, String reqId, String callback) {
+
+	public ResponseData putData(String serviceName, String okvKey, String propValue, String reqId, String callback) {
 
 		UserDataManager udm = UserDataManager.getInstance();
 		// put Services Table 
@@ -27,10 +26,12 @@ public class OpenKVController {
 			return resData;
 		}
 		
-		UserData userData = new UserData(serviceName, keyName);
-		Map<String, Object> prop = new HashMap<String, Object>();
-		prop.put("value", propValue);
-		userData.setProperties(prop);
+		UserData userData = new UserData(serviceName, okvKey);
+
+		
+		userData.setPropertiesFromJSON(propValue);
+		
+
 		try {
 			udm.set(userData);
 			ResponseData resData = new ResponseData(userData, reqId, callback);
@@ -43,12 +44,12 @@ public class OpenKVController {
 		
 	}
 		
-	public ResponseData getData(String serviceName, String keyName, String reqId, String callback) {
+	public ResponseData getData(String serviceName, String okvKey, String reqId, String callback) {
 		
 		try {
 			UserDataManager udm = UserDataManager.getInstance();
-			UserData userData = udm.get(serviceName, keyName);
-			ResponseData resData = new ResponseData(userData, reqId, callback);
+			List<UserData> userDataList = udm.get(serviceName, okvKey);
+			ResponseData resData = new ResponseData(userDataList, reqId, callback);
 			
 			return resData;
 		}
