@@ -13,6 +13,7 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
@@ -108,6 +109,20 @@ public class UserDataManager {
 			
 		return dataList;
 
+	}
+	
+	// set Services Table  this method does not use UserData Objects.
+	public void setService(String serviceName) throws Exception {
+		try {
+			
+			Entity entity = new Entity("Services", serviceName);
+			entity.setProperty("AccessDate", new Date());
+			entity.setProperty("ServiceName", serviceName);
+			ds.put(entity);
+		} catch (Exception e) {
+			throw e;
+		}
+		
 	}
 	
 	public void set(UserData userData) throws Exception {

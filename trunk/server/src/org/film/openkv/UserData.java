@@ -6,6 +6,7 @@ import java.util.Map;
 import net.arnx.jsonic.JSON;
 
 import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 
 //UserData has one entity of the Bigtable and the kind name.
 public class UserData {
@@ -56,6 +57,9 @@ public class UserData {
 	}
 	public void setKey(Key key) {
 		this.key = key;
+	}
+	public void setKey(String key) {
+		this.key = KeyFactory.createKey(kindName, key);
 	}
 
 	public String getOkvKey() {
