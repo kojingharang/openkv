@@ -3,6 +3,7 @@ package org.film.openkv;
 import static com.google.appengine.api.datastore.DatastoreServiceConfig.Builder.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +16,9 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.FilterOperator;
+import com.google.appengine.api.datastore.FetchOptions;
+
+import static com.google.appengine.api.datastore.FetchOptions.Builder.*;
 
 //import com.google.appengine.api.datastore.ReadPolicy.Consistency;
 
@@ -67,13 +71,35 @@ public class UserDataManager {
 	}
 	
 		
-	public List<UserData> get(String serviceName, String okvKey) {
+	public List<UserData> get(String serviceName, String okvKey, String offset, String limit) {
 		List<UserData> dataList = new ArrayList<UserData>();
+		FetchOptions fetchOption = withOffset(0);
 		Query query = new Query(serviceName);
 		query.addFilter("okvKey", FilterOperator.EQUAL, okvKey);
+		query.addSort("okvTs");
+		
+		
+		
+		try {
+			int intOffset = Integer.parseInt(offset);
+			fetchOption.offset(intOffset);
+		}
+		catch(NumberFormatException e) {
+			
+		}
+		
+		try {
+			int intLimit = Integer.parseInt(limit);
+			fetchOption.limit(intLimit);
+		}
+		catch(NumberFormatException e) {	
+		}
+		
+		
+		
 		PreparedQuery preparedQuery = ds.prepare(query);
 		
-		for(Entity entity : preparedQuery.asIterable()) {
+		for(Entity entity : preparedQuery.asIterable(fetchOption)) {
 			UserData userData = new UserData(serviceName, okvKey);
 			userData.setProperties(entity.getProperties());
 			userData.setKey(entity.getKey());
@@ -92,6 +118,7 @@ public class UserDataManager {
 			
 			String okvKey = userData.getOkvKey();
 			entity.setProperty("okvKey", okvKey);
+			entity.setProperty("okvTs", new Date());
 			
 			Map<String, Object> props = userData.getProperties();
 			
