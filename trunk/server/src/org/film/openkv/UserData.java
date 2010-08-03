@@ -7,6 +7,7 @@ import net.arnx.jsonic.JSON;
 
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.Text;
 
 //UserData has one entity of the Bigtable and the kind name.
 public class UserData {
@@ -23,7 +24,7 @@ public class UserData {
 		this.okvKey = okvKey;
 	}
 	
-	// UserData specified by the Key of BigTable
+	// UserData is specified by the Key of BigTable
 	public UserData(String kindName, Key key) {
 		this.kindName = kindName;
 		this.key = key;
@@ -40,13 +41,20 @@ public class UserData {
 		return properties;
 	}
 	public void setProperties(Map<String, Object> properties) {
-		this.properties.putAll(properties);
+		
+		for(Map.Entry<String, Object>entry : properties.entrySet()) {
+			if( entry.getValue() instanceof Text ) {
+				this.properties.put(entry.getKey(), ((Text)entry.getValue()).getValue());
+			}
+			else {
+				this.properties.put(entry.getKey(), entry.getValue());
+			}
+		}
+
 	}
 	
 	@SuppressWarnings("unchecked")
 	public void setPropertiesFromJSON(String json) {
-		//JSON jsonObject = new JSON();
-		//Map<String, Object> map = (Map<String, Object>)jsonObject.parse(json);
 		Map<String, Object> map = JSON.decode(json, Map.class);
 		
 		this.properties.putAll(map);

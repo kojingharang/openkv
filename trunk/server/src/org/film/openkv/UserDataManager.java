@@ -16,6 +16,7 @@ import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.datastore.Query.FilterOperator;
 import com.google.appengine.api.datastore.FetchOptions;
 
@@ -86,14 +87,15 @@ public class UserDataManager {
 			fetchOption.offset(intOffset);
 		}
 		catch(NumberFormatException e) {
-			
+			 // do nothing
 		}
 		
 		try {
 			int intLimit = Integer.parseInt(limit);
 			fetchOption.limit(intLimit);
 		}
-		catch(NumberFormatException e) {	
+		catch(NumberFormatException e) {
+			// do nothing
 		}
 		
 		
@@ -128,7 +130,6 @@ public class UserDataManager {
 	public void set(UserData userData) throws Exception {
 		
 		try {
-			//Entity entity = new Entity(userData.getKey());
 			Entity entity = new Entity(userData.getKindName());
 			
 			String okvKey = userData.getOkvKey();
@@ -138,8 +139,29 @@ public class UserDataManager {
 			Map<String, Object> props = userData.getProperties();
 			
 			// set properties to an entity
-			for(Map.Entry<String, Object>e : props.entrySet()) {
-				entity.setProperty(e.getKey(), e.getValue());
+			for(Map.Entry<String, Object>entry : props.entrySet()) {
+				
+				if(entry.getKey().startsWith("text_")) {
+					try {
+						Text textValue = new Text((String)entry.getValue());
+						entity.setProperty(entry.getKey(), textValue);
+					}
+					catch(Exception e) {
+						throw e;
+					}
+				}
+				else if(entry.getKey().startsWith("int_")) {
+					try {
+						Integer integerValue = Integer.valueOf(entry.getValue().toString());
+						entity.setProperty(entry.getKey(), integerValue);
+					}
+					catch(Exception e) {
+						throw e;
+					}
+				}
+				else {
+					entity.setProperty(entry.getKey(), entry.getValue());
+				}
 			}
 			
 			ds.put(entity);
