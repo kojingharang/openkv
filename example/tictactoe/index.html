@@ -18,10 +18,14 @@
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
 		var dict = new RDict("http://openkvs.appspot.com/openkv?s=example_tictactoe");
-		var myID = uniq_id("UserID");
-		var gameID = "";
-		var the_gameState = { "field": [0,0,0,0,0,0,0,0,0], "turn": "" };
-		//alert(myID);
+		//var g_myID = uniq_id("UserID");
+		//var g_myID = $(nickname).value;
+		var g_myID = "";
+		var g_otherID = "";
+		var g_gameID = "";
+		var g_gameState = { "field": [0,0,0,0,0,0,0,0,0], "turn": "" };
+		var g_watchdog = [];
+		//alert(g_myID);
 		
 		function uniq_id(prefix) { return prefix + "_" + /*new Date() + "_" + */ Math.floor( Math.random() * 100000 ); }
 		
@@ -33,7 +37,7 @@
 				//alert("end main");
 				setTimeout("main()", 1000);
 			}
-			if(gameID)
+			if(g_gameID)
 			{
 				play(cont);
 			}
@@ -46,17 +50,17 @@
 		function try_to_start_game(cont)
 		{
 			//alert("try_to_start_game");
-			// check myID status. if other side starts game, get gameID.
-			dict.get("gameID_"+myID, function(value) {
-				//alert("gameID_myID: "+value);
+			// check g_myID status. if other side starts game, get g_gameID.
+			dict.get("gameID_"+g_myID, function(value) {
+				//alert("gameID_g_myID: "+value);
 				if(value)
 				{
-					//alert("set gameID"+value);
-					gameID = value;
+					//alert("set g_gameID"+value);
+					g_gameID = value;
 				}
-				if(gameID)
+				if(g_gameID)
 				{
-					//alert("gameID: "+gameID);
+					//alert("g_gameID: "+g_gameID);
 					play(cont);
 					return;
 				}
@@ -73,32 +77,32 @@
 					for(var i=0;i<lobby.length;i++)
 					{
 						//alert("lobby["+i+"]: "+lobby[i]);
-						if(lobby[i]==myID)
+						if(lobby[i]==g_myID)
 						{
 							myID_inserted = 1;
 						}
 						else
 						{
-							var otherID = lobby[i];
+							g_otherID = lobby[i];
 							
 							// remove otherID from lobby
 							lobby.splice(i, 1);
 							
-							// remove myID from lobby
-							for(var j=0;j<lobby.length;j++) if(lobby[j]==myID) lobby.splice(j, 1);
+							// remove g_myID from lobby
+							for(var j=0;j<lobby.length;j++) if(lobby[j]==g_myID) lobby.splice(j, 1);
 							
 							dict.put("lobby", Object.toJSON(lobby), function(){
 								//alert("updated lobby: "+Object.toJSON(lobby));
-								start_game(myID, otherID);
+								start_game(g_myID, g_otherID);
 								play(cont);
 							});
 							return;
 						}
 					}
-					// add myID to lobby
+					// add g_myID to lobby
 					if(!myID_inserted)
 					{
-						lobby.unshift(myID);
+						lobby.unshift(g_myID);
 						while(lobby.length>10) lobby.pop();
 						dict.put("lobby", Object.toJSON(lobby), function(){
 							//alert("updated lobby: "+Object.toJSON(lobby));
@@ -113,31 +117,67 @@
 			});
 		}
 		
+		function resetGame()
+		{
+			g_gameID = "";
+			dict.put("gameID_"+g_myID, g_gameID);
+			dict.put("gameID_"+g_otherID, g_gameID);
+			g_watchdog = [];
+		}
 		function start_game(myID, otherID)
 		{
 			//alert("start_game "+myID+" "+otherID);
-			// generate GameID
-			gameID = uniq_id("GameID");
+			// generate g_gameID
+			g_gameID = uniq_id("g_gameID");
 			var first_turn = Math.random() * 100 > 50 ? myID : otherID;
-			the_gameState = { "field": [0, 0, 0, 0, 0, 0, 0, 0, 0], "players": [myID, otherID], "image": (first_turn==myID ? [1, 2] : [2, 1]), "turn": first_turn };
-			dict.put(gameID, Object.toJSON(the_gameState));
-			// update state of two by GameID
-			dict.put("gameID_"+myID, gameID);
-			dict.put("gameID_"+otherID, gameID);
+			var my_image = first_turn==myID ? 1 : 2;
+			g_gameState = {
+				"field": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+				"other": {  },
+				"image": {  },
+				"turn": first_turn
+			};
+			g_gameState["other"][myID] = otherID;
+			g_gameState["other"][otherID] = myID;
+			g_gameState["image"][myID] = my_image;
+			g_gameState["image"][otherID] = my_image==1 ? 2 : 1;
+			
+			//alert("other: "+Object.toJSON(g_gameState));
+			dict.put(g_gameID, Object.toJSON(g_gameState));
+			// update state of two by g_gameID
+			dict.put("gameID_"+myID, g_gameID);
+			dict.put("gameID_"+otherID, g_gameID);
 		}
 		
 		function play(cont)
 		{
 			//alert("play");
-			dict.get(gameID, function(value) {
+			
+			// Watch dog timer
+			dict.put("watchdog_"+g_myID, Math.floor( Math.random() * 10000 ));
+			dict.get("watchdog_"+g_otherID, function(value) {
+				g_watchdog.push(value);
+				while(g_watchdog.length>5) g_watchdog.shift();
+				if(g_watchdog.length < 5) return;
+				for(var i=0; i<g_watchdog.length; i++)
+				{
+					if(g_watchdog[0]!=g_watchdog[i]) return;
+				}
+				// disconnected
+				resetGame();
+			});
+			
+			dict.get(g_gameID, function(value) {
 				var gameState = {};
 				try {
 					gameState = eval("("+value+")");
 				} catch(e) {}
-				the_gameState = gameState;
+				g_gameState = gameState;
+				if(!gameState) { cont(); return; }
 				var field = gameState["field"];
 				var turn = gameState["turn"];
 				if(!field || !turn) { cont(); return; }
+				g_otherID = gameState["other"][g_myID];
 				//alert("field: "+field+" turn: "+turn);
 				
 				updateState();
@@ -147,7 +187,7 @@
 		}
 		function setField()
 		{
-			var field = the_gameState["field"];
+			var field = g_gameState["field"];
 			var img = ["n", "o", "x"];
 			for(var i=0;i<9;i++)
 			{
@@ -159,34 +199,74 @@
 		function updateState()
 		{
 			var s = [];
-			s.push("myID: "+myID);
-			s.push("gameID: "+gameID);
-			s.push("Turn: "+the_gameState["turn"]);
-			s.push("("+(the_gameState["turn"]==myID ? "You":"Other side")+")");
-			$("state").innerHTML = "<pre>"+s.join("\n")+"</pre>";
+			s.push("g_myID: "+g_myID);
+			s.push("g_otherID: "+g_otherID);
+			s.push("g_gameID: "+g_gameID);
+			s.push("g_watchdog: "+g_watchdog.join(", "));
+			if(g_gameState)
+			{
+				s.push(Object.toJSON(g_gameState));
+				//s.push("Turn: "+g_gameState["turn"]);
+				//s.push("("+(g_gameState["turn"]==g_myID ? "You":"Other side")+")");
+			}
+			
+			var yours = "";
+			var img = ["n", "o", "x"];
+			//if(g_gameState && g_gameState["image"]) yours = "You are <img src='"+img[ g_gameState["image"][g_myID] ]+".png' /><br />";
+			
+			$("state").innerHTML  = yours + "<pre>"+s.join("\n")+"</pre>";
+			
+			if(g_gameState && g_gameState["image"])
+			{
+				$("myImage").innerHTML    = "<img style='width: 3em; height: 3em; vertical-align:middle;' src='"+img[ g_gameState["image"][g_myID] ]+".png' />";
+				$("otherImage").innerHTML = "<img style='width: 3em; height: 3em; vertical-align:middle;' src='"+img[ g_gameState["image"][g_otherID] ]+".png' />";
+			}
+			else
+			{
+				$("myImage").innerHTML = "";
+				$("otherImage").innerHTML = "";
+			}
+			$("otherID").innerHTML = g_otherID;
+			
+			if(g_gameState)
+			{
+				$("turn_info").innerHTML = g_gameState["turn"] ? ("<span style='font-size: 3em'>" + (g_gameState["turn"]==g_myID ? "<span style='color: #c53030'>Your</span> turn" : "Opponent's turn") + "</span>") : "";
+			}
 		}
 		function put(id)
 		{
 			//alert("put: "+id);
-			if(myID!=the_gameState["turn"]) return;
+			if(g_myID!=g_gameState["turn"]) return;
 			
-			the_gameState["field"][id] = the_gameState["image"][ the_gameState["players"][0]==myID ? 0 : 1 ];
+			g_gameState["field"][id] = g_gameState["image"][ g_myID ];
 			setField();
 			
-			var otherID = the_gameState["players"][0]==myID ? 1 : 0;
-			the_gameState["turn"] = the_gameState["players"][ otherID ];
-			dict.put(gameID, Object.toJSON(the_gameState), function() {
-				//alert("updated the_gameState");
+			g_gameState["turn"] = g_otherID;
+			dict.put(g_gameID, Object.toJSON(g_gameState), function() {
+				//alert("updated g_gameState");
 			});
+		}
+		function initName()
+		{
+			g_myID = $("nickname").value = "Anonymous Coward " + Math.floor( Math.random() * 10000 );
+		}
+		function nicknameChanged()
+		{
+			g_myID = $("nickname").value;
+			resetGame();
 		}
 		//alert(dict.toString());
 	</script>
 </head>
-<body style="" onLoad="javascript:setField();main();">
+<body style="" onLoad="javascript:initName();setField();main();">
 
 <!--<button style="padding: 5px 15px" onClick="javascript:main();">main()</button>-->
 
-<span id="state"></span>
+<span id="myImage"></span><input type="text" id="nickname" value="" onChange="javascript:nicknameChanged();">
+vs
+<span id="otherImage"></span><span id="otherID"></span><br>
+
+<span id="turn_info"></span><br>
 
 <table class="field">
 	<tr>
@@ -205,6 +285,8 @@
 		<td style="border-width: 1px 0px 0px 1px"><span id="field8"></span></td>
 	</tr>
 </table>
+
+<span id="state"></span>
 
 
 <br>
