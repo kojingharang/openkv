@@ -20,7 +20,7 @@ public class ResponseData {
 	private String result;
 	private String message;
 	private String callback = DEFAULT_CALLBACK;
-	private String reqId;
+	private String reqId; // can be null
 	
 
 	public ResponseData(String result, String message, String reqId, String callback) {
@@ -117,6 +117,10 @@ public class ResponseData {
 
 		for(UserData userData : userDataList) {
 			Map<String, Object> userMap = userData.getProperties();
+			
+			// remove okv values.
+			userMap.remove("okvKey");
+			userMap.remove("okvTs");
 			dataList.add(userMap);
 
 		}
