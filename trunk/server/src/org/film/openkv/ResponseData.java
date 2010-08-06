@@ -117,9 +117,8 @@ public class ResponseData {
 
 		for(UserData userData : userDataList) {
 			Map<String, Object> userMap = userData.getProperties();
-			
+			userMap.put("key", userData.getKey().getName());
 			// remove okv values.
-			userMap.remove("okvKey");
 			userMap.remove("okvTs");
 			dataList.add(userMap);
 

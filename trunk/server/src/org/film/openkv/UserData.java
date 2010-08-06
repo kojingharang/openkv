@@ -15,13 +15,11 @@ public class UserData {
 	private String kindName;
 	private Map<String, Object> properties = new HashMap<String, Object>();
 	private Key key;   // the Key of BigTable
-	private String okvKey;
 	
 	
-	
-	public UserData(String kindName, String okvKey) {
+	public UserData(String kindName, String key) {
 		this.kindName = kindName;
-		this.okvKey = okvKey;
+		this.key = KeyFactory.createKey(kindName, key);
 	}
 	
 	// UserData is specified by the Key of BigTable
@@ -69,14 +67,5 @@ public class UserData {
 	public void setKey(String key) {
 		this.key = KeyFactory.createKey(kindName, key);
 	}
-
-	public String getOkvKey() {
-		return okvKey;
-	}
-
-	public void setOkvKey(String okvKey) {
-		this.okvKey = okvKey;
-	}
-	
 
 }
