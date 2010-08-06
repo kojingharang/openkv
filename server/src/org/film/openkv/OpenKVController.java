@@ -10,7 +10,7 @@ public class OpenKVController {
 		ResponseData resData;
 		
 		String serviceName = req.getParameter("s");
-		String okvKey = req.getParameter("k");
+		String key = req.getParameter("k");
 		String callback = req.getParameter("callback");
 		String value = req.getParameter("v");
 		String reqId = req.getParameter("rid");
@@ -19,7 +19,7 @@ public class OpenKVController {
 	        resData = returnErrorResponse(req, "ServiceName is not set.");
 	        return resData;
 	    }
-	    if(okvKey == null || okvKey.equals("")) {
+	    if(key == null || key.equals("")) {
 	    	resData = returnErrorResponse(req, "Key is not set.");
 	    	return resData;
 	    }
@@ -41,7 +41,7 @@ public class OpenKVController {
 			return resData;
 		}
 		
-		UserData userData = new UserData(serviceName, okvKey);
+		UserData userData = new UserData(serviceName, key);
 		
 		userData.setPropertiesFromJSON(value);
 		
@@ -62,30 +62,35 @@ public class OpenKVController {
 		ResponseData resData;
 		
 	    // get Parameters 
-		String serviceName = req.getParameter("s");
-		String okvKey = req.getParameter("k"); //  OkvKey
+		String serviceName = req.getParameter("s"); 
+		String key = req.getParameter("k");
 
 		String callback = req.getParameter("callback");
 		String reqId = req.getParameter("rid");
-		String offset = req.getParameter("offset");
-		String limit = req.getParameter("limit");
+		String offset = req.getParameter("offset"); // can be null
+		String limit = req.getParameter("limit"); // can be null
+		String filter = req.getParameter("f"); // can be null
+		
+		
 		
 	    if(serviceName == null || serviceName.equals("")) {
 	        resData = returnErrorResponse(req, "Service name is not set.");
 	        return resData;
-	    }
-	    if(okvKey == null || okvKey.equals("")) {
-	    	resData = returnErrorResponse(req, "Key is not set.");
-	    	return resData;
 	    }
 	    
 	    
 	    
 		try {
 			UserDataManager udm = UserDataManager.getInstance();
-			List<UserData> userDataList = udm.get(serviceName, okvKey, offset, limit);
-			resData = new ResponseData(userDataList, reqId, callback);
 			
+			if(key != null && !key.equals("")) {
+				UserData userData = udm.get(serviceName, key);
+				resData = new ResponseData(userData, reqId, callback);
+			}
+			else {
+				List<UserData> userDataList = udm.get(serviceName, filter, offset, limit);
+				resData = new ResponseData(userDataList, reqId, callback);
+			}
 			return resData;
 		}
 		catch(Exception e) {
@@ -97,6 +102,45 @@ public class OpenKVController {
 		
 	}
 
+	
+	public ResponseData deleteData(HttpServletRequest req) {
+		ResponseData resData;
+		UserDataManager udm = UserDataManager.getInstance();
+		
+	    // get Parameters 
+		String serviceName = req.getParameter("s"); 
+		String key = req.getParameter("k");
+
+		String callback = req.getParameter("callback");
+		String reqId = req.getParameter("rid");
+		String offset = req.getParameter("offset"); // can be null
+		String limit = req.getParameter("limit"); // can be null
+		String filter = req.getParameter("f"); // can be null
+		
+		try {
+			
+			if(key != null && !key.equals("")) {
+			
+				UserData userData = new UserData(serviceName, key);
+				userData = udm.get(userData);
+				udm.delete(userData);
+				resData = new ResponseData(userData, reqId, callback);
+			}
+			else {
+				List<UserData> userDataList = udm.get(serviceName, filter, offset, limit);
+				udm.delete(userDataList);
+				resData = new ResponseData(userDataList, reqId, callback);
+			}
+			
+		}
+		catch(Exception e) {
+			resData = returnErrorResponse(req, e.getMessage());
+			return resData;
+		}
+		
+		
+		return resData;
+	}
 	
 	private ResponseData returnErrorResponse (HttpServletRequest req, String message) {
 		ResponseData resData = new ResponseData(ResponseData.NGCODE, message, req.getParameter("rid"), req.getParameter("callback"));

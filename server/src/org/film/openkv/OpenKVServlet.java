@@ -20,6 +20,10 @@ public class OpenKVServlet extends HttpServlet {
 	    	doPut(req, resp);
 	    	return;
 	    }
+	    else if(cmd != null && cmd.equals("delete")) {
+	    	doDelete(req, resp);
+	    	return;
+	    }
  
 
 
@@ -45,7 +49,20 @@ public class OpenKVServlet extends HttpServlet {
 		resp.getWriter().println(resData.toJSONP());
 		
 	}
-	
+
+	public void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+		
+		req.setCharacterEncoding("UTF-8");
+		resp.setContentType("application/json");
+		resp.setCharacterEncoding("UTF-8");
+		
+		OpenKVController okvc = new OpenKVController();
+		
+		ResponseData resData = okvc.deleteData(req);
+		
+		resp.getWriter().println(resData.toJSONP());
+		
+	}
 
 
 }
