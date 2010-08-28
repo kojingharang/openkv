@@ -57,10 +57,10 @@ public class UserDataManager {
 			this.symbol = symbol;
 		}
 		
-		   @Override
-		    public String toString() {
-		        return symbol;
-		    } 
+		@Override
+		public String toString() {
+			return symbol;
+		} 
 
 		public static SearchFilter filter(String symbol) {
 			SearchFilter result = null;

@@ -1,7 +1,15 @@
 package org.film.openkv;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import javax.servlet.http.*;
+
+import com.google.appengine.api.users.User;
+import com.google.appengine.api.users.UserService;
+import com.google.appengine.api.users.UserServiceFactory;
 
 public class OpenKVController {
 	
@@ -79,7 +87,6 @@ public class OpenKVController {
 	    }
 	    
 	    
-	    
 		try {
 			UserDataManager udm = UserDataManager.getInstance();
 			
@@ -142,9 +149,91 @@ public class OpenKVController {
 		return resData;
 	}
 	
-	private ResponseData returnErrorResponse (HttpServletRequest req, String message) {
+	public ResponseData returnErrorResponse (HttpServletRequest req, String message) {
 		ResponseData resData = new ResponseData(ResponseData.NGCODE, message, req.getParameter("rid"), req.getParameter("callback"));
 		return resData;
+	}
+	
+	
+	public ResponseData getUserInfo(HttpServletRequest req) {
+		String from = req.getParameter("from");
+		String callback = req.getParameter("callback");
+		String reqId = req.getParameter("rid");
+		Map<String, Object> dataMap = new HashMap<String, Object>();
+		UserService userService = UserServiceFactory.getUserService();
+		User user = userService.getCurrentUser();
+		
+		if(user == null) {
+			dataMap.put("logined", 0);
+			dataMap.put("login_url", userService.createLoginURL(from));
+			dataMap.put("logout_url", userService.createLogoutURL(from));
+		}
+		else {
+			dataMap.put("logined", 1);
+			dataMap.put("login_url", userService.createLoginURL(from));
+			dataMap.put("logout_url", userService.createLogoutURL(from));
+			dataMap.put("email", user.getEmail());
+			dataMap.put("user_id", user.getUserId());
+		}
+		
+		ResponseData resData = new ResponseData(dataMap, reqId, callback);
+		return resData;
+		
+		
+	}
+
+	public boolean privCheck(String key, User user, String serviceName, String t) {
+		
+		if(t.equals("get_user")) {
+			return true;
+		}
+		
+		Map map = extractPrivTable(serviceName);
+	
+		if(user == null ) {
+			List<String> operations = (List<String>) map.get("g");
+			if(operations.contains(t) || operations.contains("all")) {
+				return true;
+			}
+		}
+		else {
+			if(key.startsWith(user.getUserId())) {
+				//m
+				List<String> operations = (List<String>)map.get("m");
+				if(operations.contains(t) || operations.contains("all")) {
+					return true;
+				}
+			}
+			else {
+				//o
+				List<String> operations = (List<String>)map.get("o");
+				if(operations.contains(t) || operations.contains("all")) {
+					return true;
+				}
+			}
+		
+		}
+		return false;
+		
+	}
+	
+	private HashMap<String, List<String> > extractPrivTable(String privStr) {
+	    HashMap<String, List<String> > h = new HashMap<String, List<String> >();
+	    
+	    String u[] = privStr.split("/");
+	    int limit = u.length;
+	    if(limit>3) limit = 3;
+	    for(int i=0;i<limit;i++)
+		{
+		    String pair[] = u[i].split(":");
+		    if(pair.length<1) continue;
+
+		    String listStr = pair.length > 1 ? pair[1] : "";
+		    List<String> l = Arrays.asList( listStr.split(",") );
+		    h.put(pair[0], l);
+		}
+	   
+	    return h;
 	}
 	
 }
