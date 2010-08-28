@@ -17,6 +17,7 @@ public class ResponseData {
 	private static final String DEFAULT_CALLBACK = "okv_callback";
 	
 	private List<UserData> userDataList;
+	private Map<String, Object> dictionaryData; // custom data  
 	private String result;
 	private String message;
 	private String callback = DEFAULT_CALLBACK;
@@ -65,6 +66,19 @@ public class ResponseData {
 		this.message = MSG_OK;
 	}
 	
+	public ResponseData(Map<String, Object> dictionary, String reqId, String callback) {
+		this.dictionaryData = dictionary;
+		if(callback == null) {
+			this.callback = DEFAULT_CALLBACK;
+		}
+		else {
+			this.callback = callback;
+		}
+		this.reqId = reqId;
+		this.result = OKCODE;
+		this.message = MSG_OK;
+	}
+	
 	public List<UserData> getUserDataList() {
 		return userDataList;
 	}
@@ -101,6 +115,14 @@ public class ResponseData {
 		this.reqId = reqId;
 	}
 	
+	public Map<String, Object> getDictionaryData() {
+		return dictionaryData;
+	}
+
+	public void setDictionaryData(Map<String, Object> dictionaryData) {
+		this.dictionaryData = dictionaryData;
+	}
+
 	// Returns JSONP String
 	// openkv_callback({"result": 0, "message": "OK", "value":{[{col1:v1, col2:[a, b]}, {col1:v2, col2:[c,d]}]}, "rid:1"}
 	public String toJSONP() {
@@ -110,19 +132,28 @@ public class ResponseData {
 		resMap.put("result", result);
 		resMap.put("message", message);
 		
+		if(dictionaryData != null) {
+			for(Map.Entry<String, Object>entry : dictionaryData.entrySet())  {
+				resMap.put(entry.getKey(), entry.getValue());
+			}
+		}
 
 		if(reqId != null) {
 			resMap.put("rid", reqId);
 		}
 
-		for(UserData userData : userDataList) {
-			Map<String, Object> userMap = userData.getProperties();
-			userMap.put("key", userData.getKey().getName());
-			// remove okv values.
-			userMap.remove("okvTs");
-			dataList.add(userMap);
-
+		if(userDataList != null) {
+			for(UserData userData : userDataList) {
+				Map<String, Object> userMap = userData.getProperties();
+				userMap.put("key", userData.getKey().getName());
+				// remove okv values.
+				userMap.remove("okvTs");
+				dataList.add(userMap);
+			}
 		}
+		
+		
+		
 	    resMap.put("value", dataList);
 	    String jsonResponse = JSON.encode(resMap);
 	    
