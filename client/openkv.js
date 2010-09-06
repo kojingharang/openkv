@@ -3,7 +3,6 @@
 var RDict = function(baseurl)
 {
 	this.baseurl = baseurl;
-	this.passcode = "";
 };
 
 // rid -> {callback: callback, t: get|put }
@@ -30,6 +29,29 @@ var RDict_global_callback = function(value)
 		{
 			callback();
 		}
+		if(t=="get_user")
+		{
+			var html = "";
+			var info = "";
+			var info_keys = ["logined", "email", "user_id"];
+			if( value["logined"] )
+			{
+				html += "<b>" + value["email"] + "</b> | ";
+				html += "<a href='" + value["logout_url"] + "'>Logout</a> | ";
+			}
+			else
+			{
+				html += "<a href='" + value["login_url"] + "'>Login</a>";
+			}
+			for(var i=0; i<info_keys.length; i++)
+			{
+				var key = info_keys[i];
+				if(value[key] != undefined) info += key + ": " + value[key] + "<br>";
+			}
+			value["html"] = html;
+			value["info"] = info;
+			callback( value );
+		}
 	}
 };
 
@@ -48,7 +70,7 @@ RDict.prototype = {
 		// add random param to avoid be in cache
 		dict["random"] = Math.floor(Math.random()*65536);
 		
-		var param = "&callback=RDict_global_callback&p="+this.passcode+"&rid="+RDict_request_ID+"&";
+		var param = "&callback=RDict_global_callback&rid="+RDict_request_ID+"&";
 		for(var k in dict)
 		{
 			param += k + "=" + dict[k] + "&";
@@ -65,6 +87,18 @@ RDict.prototype = {
 		RDict_request_ID++;
 		RDict_context[RDict_request_ID] = {"callback": callback, "t": action};
 		//alert(Object.toJSON(RDict_context));
+	},
+	
+	// Get user login information.
+	// (AuthProfile only)
+	// @return      Dict    
+	get_user: function(cont)
+	{
+		this.save_context("get_user", cont);
+		this.call_server({
+			"t": "get_user",
+			"from": window.location.href
+		});
 	},
 	
 	// Put the value identified with the key
@@ -122,22 +156,6 @@ RDict.prototype = {
 				cont();
 			}
 		});
-	},
-	
-	// Try authorization. Return auth HTML for the 1st time. Return passcode if already authorized.
-	// (AuthProfile only)
-	// @param[in] String key
-	// @return      Dict    contains auth HTML,
-	try_auth: function(key)
-	{
-	},
-	
-	// Set passcode for put/get. Call this when server return passcode.
-	// (AuthProfile only)
-	// @param[in] String passcode ... For authentication. Optional.
-	set_passcode: function(passcode)
-	{
-		this.passcode = passcode;
 	}
 };
 
