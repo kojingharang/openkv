@@ -29,35 +29,35 @@ public class MainFilter implements Filter {
 	public void doFilter(ServletRequest req, ServletResponse res,
 			FilterChain chain) throws IOException, ServletException {
 		
-		UserService userService = UserServiceFactory.getUserService();
-		User user = userService.getCurrentUser();
-
-		String serviceName = ((HttpServletRequest)req).getParameter("s");
-		String t = ((HttpServletRequest)req).getParameter("t");
-		String key = ((HttpServletRequest)req).getParameter("k");
-		
-	
-		
-		
-		
-		OpenKVController okvc = new OpenKVController();
-		
-		if(t == null || t.equals("")  || 
-		   serviceName == null || serviceName.equals("")) {			
-			ResponseData resData = okvc.returnErrorResponse((HttpServletRequest)req, "parameters are not set");
-			res.getWriter().println(resData.toJSONP());
-			return;
-		}
-		
-		
-		if(!okvc.privCheck(key, user, serviceName, t)) {
-			ResponseData resData = okvc.returnErrorResponse((HttpServletRequest)req, 
-					"operation " +  t + "is not allowed.");
-			res.getWriter().println(resData.toJSONP());
-			return;
-		}
-
-		
+//		UserService userService = UserServiceFactory.getUserService();
+//		User user = userService.getCurrentUser();
+//
+//		String serviceName = ((HttpServletRequest)req).getParameter("s");
+//		String t = ((HttpServletRequest)req).getParameter("t");
+//		String key = ((HttpServletRequest)req).getParameter("k");
+//		
+//	
+//		
+//		
+//		
+//		OpenKVController okvc = new OpenKVController();
+//		
+//		if(t == null || t.equals("")  || 
+//		   serviceName == null || serviceName.equals("")) {			
+//			ResponseData resData = okvc.returnErrorResponse((HttpServletRequest)req, "parameters are not set");
+//			res.getWriter().println(resData.toJSONP());
+//			return;
+//		}
+//		
+//		
+//		if(!okvc.privCheck(key, user, serviceName, t)) {
+//			ResponseData resData = okvc.returnErrorResponse((HttpServletRequest)req, 
+//					"operation " +  t + "is not allowed.");
+//			res.getWriter().println(resData.toJSONP());
+//			return;
+//		}
+//
+//		
 		chain.doFilter(req, res);
 
 	}
