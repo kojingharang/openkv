@@ -10,44 +10,36 @@ import net.arnx.jsonic.*;
 
 public class ResponseData {
 	
-	public static final String NGCODE = "1";
-	public static final String OKCODE = "0";
+	public static final String NGCODE = "ERROR";
+	public static final String OKCODE = "OK";
 	public static final String MSG_OK = "OK";
 	public static final String MSG_NG = "NG";
 	private static final String DEFAULT_CALLBACK = "okv_callback";
 	
-	private List<UserData> userDataList;
-	private Map<String, Object> dictionaryData; // custom data  
+	private UserData userData = null;
+	private List<UserData> userDataList = null;
+	private Map<String, Object> dictionaryData = null; // custom data  
 	private String result;
 	private String message;
 	private String callback = DEFAULT_CALLBACK;
 	private String reqId; // can be null
 	
-
+	public static ResponseData createErrorResponse(String message, String reqId, String callback)
+	{
+		return new ResponseData(NGCODE, message, reqId, callback);
+	}
+	
 	public ResponseData(String result, String message, String reqId, String callback) {
 		this.result = result;
 		this.message = message;
 		this.userDataList = new ArrayList<UserData>();
-		if(callback == null) {
-			this.callback = DEFAULT_CALLBACK;
-		}
-		else {
-			this.callback = callback;
-		}
+		setCallback(callback);
 		this.reqId = reqId;
 	}
 	
 	public ResponseData(UserData userData, String reqId, String callback) {
-		if(this.userDataList == null) {
-			this.userDataList = new ArrayList<UserData>();
-		}
-		this.userDataList.add(userData);
-		if(callback == null) {
-			this.callback = DEFAULT_CALLBACK;
-		}
-		else {
-			this.callback = callback;
-		}
+		this.userData = userData;
+		setCallback(callback);
 		this.reqId = reqId;
 		this.result = OKCODE;
 		this.message = MSG_OK;
@@ -55,12 +47,7 @@ public class ResponseData {
 	
 	public ResponseData(List<UserData> userDataList, String reqId, String callback) {
 		this.userDataList = userDataList;
-		if(callback == null) {
-			this.callback = DEFAULT_CALLBACK;
-		}
-		else {
-			this.callback = callback;
-		}
+		setCallback(callback);
 		this.reqId = reqId;
 		this.result = OKCODE;
 		this.message = MSG_OK;
@@ -68,12 +55,7 @@ public class ResponseData {
 	
 	public ResponseData(Map<String, Object> dictionary, String reqId, String callback) {
 		this.dictionaryData = dictionary;
-		if(callback == null) {
-			this.callback = DEFAULT_CALLBACK;
-		}
-		else {
-			this.callback = callback;
-		}
+		setCallback(callback);
 		this.reqId = reqId;
 		this.result = OKCODE;
 		this.message = MSG_OK;
@@ -104,7 +86,12 @@ public class ResponseData {
 	}
 
 	public void setCallback(String callback) {
-		this.callback = callback;
+		if(callback == null) {
+			this.callback = DEFAULT_CALLBACK;
+		}
+		else {
+			this.callback = callback;
+		}
 	}
 	
 	public String getReqId() {
@@ -127,36 +114,30 @@ public class ResponseData {
 	// openkv_callback({"result": 0, "message": "OK", "value":{[{col1:v1, col2:[a, b]}, {col1:v2, col2:[c,d]}]}, "rid:1"}
 	public String toJSONP() {
 
-		List<Map<String, Object>> dataList = new ArrayList<Map<String, Object>>();
 		Map<String, Object> resMap = new HashMap<String, Object>();
 		resMap.put("result", result);
 		resMap.put("message", message);
+		if(reqId != null) {
+			resMap.put("rid", reqId);
+		}
 		
 		if(dictionaryData != null) {
 			for(Map.Entry<String, Object>entry : dictionaryData.entrySet())  {
 				resMap.put(entry.getKey(), entry.getValue());
 			}
 		}
-
-		if(reqId != null) {
-			resMap.put("rid", reqId);
-		}
-
+		
 		if(userDataList != null) {
+			List<Object> dataList = new ArrayList<Object>();
 			for(UserData userData : userDataList) {
-				Map<String, Object> userMap = userData.getProperties();
-				userMap.put("key", userData.getKey().getName());
-				// remove okv values.
-				userMap.remove("okvTs");
-				dataList.add(userMap);
+				dataList.add(userData.toResponseValue());
 			}
+		    resMap.put("value", dataList);
+		} else if(userData != null) {
+		    resMap.put("value", userData.toResponseValue());
 		}
 		
-		
-		
-	    resMap.put("value", dataList);
 	    String jsonResponse = JSON.encode(resMap);
-	    
 	    
 	    StringBuilder builder = new StringBuilder(jsonResponse.length() + callback.length() + 2);
 	    builder.append(callback);

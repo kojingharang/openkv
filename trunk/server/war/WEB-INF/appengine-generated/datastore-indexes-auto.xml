@@ -1,10 +1,10 @@
-<!-- Indices written at Fri, 6 Aug 2010 16:55:34 UTC -->
+<!-- Indices written at Wed, 17 Nov 2010 14:35:53 UTC -->
 
 <datastore-indexes>
 
-    <!-- Used 10 times in query history -->
-    <datastore-index kind="testService" ancestor="false" source="auto">
-        <property name="int_col1" direction="asc"/>
+    <!-- Used 1 time in query history -->
+    <datastore-index kind="example_service" ancestor="false" source="auto">
+        <property name="user_id" direction="asc"/>
         <property name="okvTs" direction="asc"/>
     </datastore-index>
 

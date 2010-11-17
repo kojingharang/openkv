@@ -1,31 +1,50 @@
 // Set KVS server url to use.
 // @param[in] String url    KVS server to use.  example: http://example.com/openkv/service_name
-var RDict = function(baseurl)
+var RDict = function(baseurl, log_element)
 {
+	//if(!baseurl) baseurl = "http://openkvs.appspot.com/openkv?s=example_service";
+	if(!baseurl) baseurl = "http://localhost:8888/openkv?s=example_service";
 	this.baseurl = baseurl;
+	this.log_element = log_element;
 };
 
 // rid -> {callback: callback, t: get|put }
 var RDict_context = {};
 var RDict_request_ID = 0;
-var RDict_log = [];
 var RDict_global_callback = function(value)
 {
-	var s_value = Object.toJSON ? Object.toJSON(value) : "";
-	//alert("RDict_global_callback: " + s_value);
-	RDict_log.push("Response << " + s_value );
 	var context = RDict_context[ value["rid"] ];
 	if(!context) return;
+	
 	var t = context["t"];
 	var callback = context["callback"];
+	var RDict_object = context["RDict_object"];
+	
+	// for log
+	var s_value = Object.toJSON ? Object.toJSON(value) : "";
+	RDict_object.log("Response << " + s_value);
+	
+	if(value["result"]=="ERROR") return;
 	
 	if(callback)
 	{
+		function decode_value(value)
+		{
+			return eval(value);
+		}
 		if(t=="get")
 		{
-			callback( value["value"] );
+			callback( decode_value(value["value"]) );
+		}
+		if(t=="search")
+		{
+			callback( decode_value(value["value"]) );
 		}
 		if(t=="put")
+		{
+			callback();
+		}
+		if(t=="add")
 		{
 			callback();
 		}
@@ -34,21 +53,11 @@ var RDict_global_callback = function(value)
 			var html = "";
 			var info = "";
 			var info_keys = ["logined", "email", "user_id"];
-			if( value["logined"] )
-			{
-				html += "<b>" + value["email"] + "</b> | ";
-				html += "<a href='" + value["logout_url"] + "'>Logout</a> | ";
-			}
-			else
-			{
-				html += "<a href='" + value["login_url"] + "'>Login</a>";
-			}
 			for(var i=0; i<info_keys.length; i++)
 			{
 				var key = info_keys[i];
 				if(value[key] != undefined) info += key + ": " + value[key] + "<br>";
 			}
-			value["html"] = html;
 			value["info"] = info;
 			callback( value );
 		}
@@ -57,10 +66,14 @@ var RDict_global_callback = function(value)
 
 
 RDict.prototype = {
+	log: function(message)
+	{
+		if(this.log_element) this.log_element.innerHTML += message + "\n";
+	},
 	loadJSONP: function(url)
 	{
 		//alert("loadJSONP: "+url);
-		RDict_log.push("Request >> " + url);
+		this.log("Request >> " + url);
 		var objScript = document.createElement("script");
 		objScript.src = url;
 		document.getElementsByTagName("head")[0].appendChild(objScript);
@@ -80,12 +93,12 @@ RDict.prototype = {
 	},
 	toString: function()
 	{
-		return "(OpenKV) baseurl: "+this.baseurl+"\n"+(RDict_log.join("\n"));
+		return "(OpenKV) baseurl: "+this.baseurl;
 	},
 	save_context: function(action, callback)
 	{
 		RDict_request_ID++;
-		RDict_context[RDict_request_ID] = {"callback": callback, "t": action};
+		RDict_context[RDict_request_ID] = {"callback": callback, "t": action, "RDict_object": this};
 		//alert(Object.toJSON(RDict_context));
 	},
 	
@@ -103,14 +116,25 @@ RDict.prototype = {
 	
 	// Put the value identified with the key
 	// @param[in] String key
-	// @param[in] String value
+	// @param[in] object value
 	put: function(key, value, cont)
 	{
 		this.save_context("put", cont);
 		this.call_server({
 			"t": "put",
 			"k": key,
-			"v": value
+			"v": Object.toJSON(value)
+		});
+	},
+	
+	// Add the value
+	// @param[in] object value
+	add: function(value, cont)
+	{
+		this.save_context("add", cont);
+		this.call_server({
+			"t": "add",
+			"v": Object.toJSON(value)
 		});
 	},
 	
@@ -126,6 +150,18 @@ RDict.prototype = {
 		});
 	},
 	
+	// Get value identified with the key.
+	// @param[in] String key
+	// @return      Dict
+	search: function(filter, cont)
+	{
+		this.save_context("search", cont);
+		this.call_server({
+			"t": "search",
+			"f": filter
+		});
+	},
+	
 	// Update value identified with the key.
 	// @param[in] String   key
 	// @param[in] function update_func(got_value, new_value func)
@@ -136,7 +172,7 @@ RDict.prototype = {
 		this.get(key, function(value) {
 			var native_value = undefined;
 			try {
-				native_value = eval("("+value+")");
+				native_value = value;
 			} catch(e) {}
 			
 			var __new_value;
@@ -148,8 +184,7 @@ RDict.prototype = {
 			});
 			if(__do_update)
 			{
-				//alert("do_update: "+Object.toJSON(__new_value));
-				__this.put(key, Object.toJSON(__new_value), cont);
+				__this.put(key, __new_value, cont);
 			}
 			else
 			{

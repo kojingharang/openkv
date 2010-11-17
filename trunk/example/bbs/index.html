@@ -31,7 +31,7 @@
 	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
-		var dict = new RDict("http://openkvs.appspot.com/openkv?s=example_service");
+		var dict = new RDict();
 		
 		function post()
 		{
@@ -41,37 +41,19 @@
 			};
 			//alert("postdata: "+ postdata);
 			
-			dict.get("simple_bbs_thread0", function(value) {
-				var rm = $("nickname").value=="rm -Rf";
-				//alert("got: "+value);
-				var bbs_data = [];
-				try {
-					var bbs_data = eval("("+value+")");
-				} catch(e) {}
-				if(!bbs_data.unshift || rm) bbs_data = [];
-				//alert("bbs_data: "+bbs_data);
-				if(!rm) bbs_data.unshift(postdata);
-				
-				dict.put("simple_bbs_thread0", Object.toJSON(bbs_data), function() {
-					//$("log").innerHTML += "<pre>" + Object.toJSON(postdata) + "</pre>";
-					show_posts();
-					$("content").value="";
-				});
+			dict.add(postdata, function() {
+				show_posts();
+				$("content").value="";
 			});
 		}
 		function show_posts()
 		{
-			dict.get("simple_bbs_thread0", function(value) {
-				//alert("show(): "+value);
-				//$("bbs").innerHTML = Object.toJSON(value);
-				var data = {};
-				try {
-					data = eval("("+value+")");
-				} catch(e) {}
+			dict.search("", function(value) {
 				var render = [];
-				for(var i=0;i<data.length;i++)
+				for(var i=0;i<value.length;i++)
 				{
-					render.push("<div class='entry'><span style='font-weight:bold; color:#09998f'>"+data[i]["nickname"]+"</span>&nbsp;&nbsp;<span>"+data[i]["content"]+"</span></div>");
+					var entry = value[i];
+					render.push("<div class='entry'><span style='font-weight:bold; color:#09998f'>"+entry["nickname"]+"</span>&nbsp;&nbsp;<span>"+entry["content"]+"</span></div>");
 				}
 				$("bbs").innerHTML = "<br>" + render.join("<br><br>");
 			});
