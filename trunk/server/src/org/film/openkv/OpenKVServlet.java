@@ -1,15 +1,7 @@
 package org.film.openkv;
 
 import java.io.IOException;
-import java.util.Map;
-
 import javax.servlet.http.*;
-
-import net.arnx.jsonic.JSON;
-
-import com.google.appengine.api.users.User;
-import com.google.appengine.api.users.UserService;
-import com.google.appengine.api.users.UserServiceFactory;
 
 
 @SuppressWarnings("serial")

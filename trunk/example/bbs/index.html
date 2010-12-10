@@ -63,12 +63,55 @@
 			$("char_left_notice").innerHTML = 140 - $("content").value.length;
 		}
 		//alert(dict.toString());
+		function setting_toggle()
+		{
+			if($("setting_view").style.display == "none")
+			{
+				setting_open();
+			}
+			else
+			{
+				setting_close();
+			}
+		}
+		function setting_open()
+		{
+			$("setting_view").style.display = "block";
+		}
+		function setting_close()
+		{
+			$("setting_view").style.display = "none";
+		}
+		function setting_save()
+		{
+			dict.put("nickname", $("nickname").value);
+		}
+		function setting_load()
+		{
+			dict.get("nickname", function(value) { $("nickname").value = value; } );
+		}
+		function body_init()
+		{
+			dict.get_user(function(value){ $("login_info").innerHTML = value["html"]; });
+			setting_load();
+			show_posts();
+			setInterval('update_char_left_notice()', 500);
+		}
 	</script>
 </head>
-<body style="background-color: #404040" onLoad="javascript:show_posts();setInterval('update_char_left_notice()', 500);">
+<body style="background-color: #404040; margin: 0; " onLoad="body_init();">
+
+<div style="width: 50%; padding: 3px 0px; margin: 0 auto 0 auto; text-align: right; background-color: antiquewhite">
+	<span id="login_info"></span>
+	<a href="javascript:void(0)" onClick="setting_toggle();">Setting</a>
+</div>
+<div id="setting_view" style="width: 50%; padding: 0px 0px; margin: 0 auto 0 auto; background-color: antiquewhite">
+	Nickname: <input id="nickname" type="text" value="">
+	<button onClick="setting_save();">Save</button>
+</div>
 
 <table style="width: 50%; margin: 0 auto 0 auto; padding: 20px; background-color: white;">
-<tr><td><input type="text" id="nickname" value="Anonymous Coward">           <span id="char_left_notice" class="char_left_notice">140</span></td></tr>
+<tr><td><span id="char_left_notice" class="char_left_notice">140</span></td></tr>
 <tr><td><textarea id="content" rows=3 style="width: 100%"></textarea></td></tr>
 <tr><td style=""><button style="padding: 5px 15px" onClick="javascript:post();">Post</button><!-- <button onClick="javascript:show_posts();">Reload</button> --></td></tr>
 <tr><td><span id="bbs"></span></td></tr>
@@ -78,7 +121,6 @@
 
 </body>
 </html>
-
 
 
 

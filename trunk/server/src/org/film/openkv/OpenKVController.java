@@ -4,11 +4,9 @@ import static com.google.appengine.api.datastore.DatastoreServiceConfig.Builder.
 import static com.google.appengine.api.datastore.FetchOptions.Builder.withOffset;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.servlet.http.*;
 
@@ -27,64 +25,9 @@ import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
 
-class AccessControl
-{
-	private String table;
-	private DatastoreService ds;
-	private static final String table_for_access_control = "_AccessControl_";
-	/**
-	 * Access control is one of "NONE" "OWNER" "LOGIN" "ALL"
-	 */
-	private HashMap<String, String> value = new HashMap<String, String>();
-	public AccessControl(String table)
-	{
-		this.table = table;
-		value.put("put", "ALL");
-		value.put("get", "ALL");
-		value.put("add", "ALL");
-		value.put("search", "ALL");
-		value.put("delete", "ALL");
-		value.put("delete_list", "ALL");
-		
-		if(table!=null && !table.equals(""))
-		{
-			DatastoreServiceConfig config = withDeadline(20.0);
-			this.ds = DatastoreServiceFactory.getDatastoreService(config);
-			try {
-				// Try to get access control record.
-				Entity entity = ds.get(KeyFactory.createKey(table_for_access_control, table));
-				for(String key : value.keySet())
-				{
-					value.put(key, (String)entity.getProperty(key));
-				}
-			} catch(EntityNotFoundException e) {
-				createRecord();
-			}
-		}
-		
-		value.put("get_user", "ALL");
-		System.out.println("AccessControl: " + value);
-	}
-	void createRecord()
-	{
-		// Put new record
-		Entity entity = new Entity(table_for_access_control, table);
-		for(String key : value.keySet())
-		{
-			entity.setProperty(key, "ALL");
-		}
-		ds.put(entity);
-	}
-	public String getPriv(String name)
-	{
-		if(!value.containsKey(name)) return "NONE";
-		return value.get(name);
-	}
-}
-
 public class OpenKVController {
 	/**
-	 * Check parameters.
+	 * Check all "not null" parameters are certainly not null.
 	 * 
 	 * @param not_null
 	 * @param req
@@ -135,6 +78,12 @@ public class OpenKVController {
 		return null;
 	}
 	
+	/**
+	 * Parse filter string and set query.
+	 * 
+	 * @param query[out]
+	 * @param filter
+	 */
 	void setQuery(Query query, String filter)
 	{
 		// filter is like  col1:<=:100:col3:>=:200 and so on.
@@ -159,7 +108,32 @@ public class OpenKVController {
 			query.addSort(f_field);
 		}
 	}
-	
+	void grant(String tag, String who, String cmd, String allow, String userID)
+	{
+		// TODO set tag _ who _ cmd => (allow, userid) to priv_table
+	}
+	void delegate(String tag, String who, String cmd, String userID)
+	{
+		// TODO assert owner(tag _ who _ cmd)==userID
+		// TODO set tag _ who _ cmd => (allow, who)
+	}
+	/**
+	 * Check whether user can do operation including the "tag".
+	 * 
+	 * @param userData
+	 * @return
+	 * @throws Exception
+	 */
+	boolean priv_check(UserData userData) throws Exception
+	{
+		if(userData.getProperties().containsKey("__tag__"))
+		{
+			String tag = (String)userData.getProperties().get("__tag__");
+			// TODO get tag _ who _ action from priv_table == OK ? true : false
+			// TODO throw new Exception(cmd+" is not allowed for the record.");
+		}
+		return true;
+	}
 	/**
 	 * OpenKV server core method.
 	 * 
@@ -170,7 +144,6 @@ public class OpenKVController {
 	 */
 	public ResponseData process(HttpServletRequest req) {
 		ResponseData resData = null;
-		
 		try {
 			HashMap<String, String> not_null = new HashMap<String, String>();
 			not_null.put("t", "Type");
@@ -206,32 +179,23 @@ public class OpenKVController {
 	    	boolean logined = UserServiceFactory.getUserService().getCurrentUser() != null;
 	    	String user_id = logined ? UserServiceFactory.getUserService().getCurrentUser().getUserId() : "";
 	    	
-			AccessControl ac = new AccessControl(serviceName);
-			
-			boolean ok = !ac.getPriv(cmd).equals("NONE");
-			// assert LOGIN or OWNER --> User != null
-			ok = ok && ( !(ac.getPriv(cmd)=="LOGIN" || ac.getPriv(cmd)=="OWNER") || logined );
-	    	if( ! ok )
-        	{
-        		throw new Exception(cmd+" is not allowed to table '" + serviceName + "'");
-        	}
+//        		throw new Exception(cmd+" is not allowed to table '" + serviceName + "'");
 	    	
 		    if(cmd.equals("get") || cmd.equals("delete")) {
 				not_null.put("s", "ServiceName");
 				not_null.put("k", "Key");
 				check_param(not_null, req);
 				
-				// Key is <UserID> "_" <Key>
-				UserData userData = new UserData(serviceName, user_id + "_" + key);
+				UserData userData = new UserData(serviceName, key);
+				
+				Entity entity = ds.get(userData.getKey());
+				userData.setProperties(entity.getProperties());
+				if(! priv_check(userData)) throw new Exception(cmd+" is not allowed for the record.");
+				
 				if(cmd.equals("delete"))
 				{
 					ds.delete(userData.getKey());
 					// TODO response
-				}
-				else
-				{
-					Entity entity = ds.get(userData.getKey());
-					userData.setProperties(entity.getProperties());
 				}
 				resData = new ResponseData(userData, reqId, callback);
 		    }
@@ -241,9 +205,9 @@ public class OpenKVController {
 				not_null.put("v", "Value");
 				check_param(not_null, req);
 				
-				// Key is <UserID> "_" <Key>
-				UserData userData = new UserData(serviceName, user_id + "_" + key);
+				UserData userData = new UserData(serviceName, key);
 				userData.setPropertiesFromJSON(value);
+				if(! priv_check(userData)) throw new Exception(cmd+" is not allowed for the record.");
 				ds.put(userData.toEntity());
 				resData = new ResponseData(userData, reqId, callback);
 		    }
@@ -254,7 +218,7 @@ public class OpenKVController {
 				
 				UserData userData = new UserData(serviceName, key);
 				userData.setPropertiesFromJSON(value);
-				if(logined) userData.properties.put("user_id", user_id);
+				if(! priv_check(userData)) throw new Exception(cmd+" is not allowed for the record.");
 				ds.put(userData.toEntity());
 				resData = new ResponseData(userData, reqId, callback);
 		    }
@@ -264,8 +228,8 @@ public class OpenKVController {
 				
 				Query query = new Query(serviceName);
 				setQuery(query, filter);
-				if(logined) query.addFilter("user_id", FilterOperator.EQUAL, user_id);
-				query.addSort("okvTs");
+				//query.addSort("okvTs");
+				System.out.println("Query: "+query);
 				
 				FetchOptions fetchOption = withOffset(0);
 				if(offset != -1) fetchOption.offset(offset);
@@ -275,8 +239,10 @@ public class OpenKVController {
 				
 				List<UserData> dataList = new ArrayList<UserData>();
 				for(Entity entity : preparedQuery.asIterable(fetchOption)) {
+					//System.out.println(entity);
 					UserData userData = new UserData(serviceName, entity.getKey());
 					userData.setProperties(entity.getProperties());
+					if(! priv_check(userData)) continue;
 					dataList.add(userData);
 				}
 				if(cmd.equals("delete_list"))
@@ -295,26 +261,27 @@ public class OpenKVController {
 				not_null.put("from", "From");
 				check_param(not_null, req);
 				
+				String server_root = req.getScheme() + "://" + req.getServerName() + ":" + req.getServerPort();
 				Map<String, Object> dataMap = new HashMap<String, Object>();
-				UserService userService = UserServiceFactory.getUserService();
-				User user = userService.getCurrentUser();
+				UserService us = UserServiceFactory.getUserService();
+				User user = us.getCurrentUser();
 				
 				if(user == null) {
 					dataMap.put("logined", 0);
-					dataMap.put("login_url", userService.createLoginURL(from));
-					dataMap.put("logout_url", userService.createLogoutURL(from));
+					dataMap.put("login_url", us.createLoginURL(from));
+					dataMap.put("logout_url", us.createLogoutURL(from));
 					
-					String html = "<a href='" + userService.createLoginURL(from) + "'>Login</a>";
+					String html = "<a href='" + server_root + us.createLoginURL(from) + "'>Login</a>";
 					dataMap.put("html", html);
 				}
 				else {
 					dataMap.put("logined", 1);
-					dataMap.put("login_url", userService.createLoginURL(from));
-					dataMap.put("logout_url", userService.createLogoutURL(from));
+					dataMap.put("login_url", us.createLoginURL(from));
+					dataMap.put("logout_url", us.createLogoutURL(from));
 					dataMap.put("email", user.getEmail());
 					dataMap.put("user_id", user.getUserId());
 					
-					String html = "<b>" + user.getEmail() + "</b> | <a href='" + userService.createLogoutURL(from) + "'>Logout</a> | ";
+					String html = "<b>" + user.getEmail() + "</b> | <a href='" + server_root + us.createLogoutURL(from) + "'>Logout</a> | ";
 					dataMap.put("html", html);
 				}
 				
