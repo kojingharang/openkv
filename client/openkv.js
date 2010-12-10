@@ -5,6 +5,7 @@ var RDict = function(baseurl, log_element)
 	//if(!baseurl) baseurl = "http://openkvs.appspot.com/openkv?s=example_service";
 	if(!baseurl) baseurl = "http://localhost:8888/openkv?s=example_service";
 	this.baseurl = baseurl;
+	this.server_root = "http://localhost:8888";
 	this.log_element = log_element;
 };
 
@@ -110,6 +111,7 @@ RDict.prototype = {
 		this.save_context("get_user", cont);
 		this.call_server({
 			"t": "get_user",
+			"server_root": this.server_root,
 			"from": window.location.href
 		});
 	},
