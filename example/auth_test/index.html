@@ -6,12 +6,13 @@
 	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
-		var dict = new RDict("http://dev-1.latest.openkvs.appspot.com/openkv?s=example_service");
+		var openkv = new OpenKV("example", $("log"));
+		//openkv.local();
 		
 		function start()
 		{
 			$("html").innerHTML = "Loading...";
-			dict.get_user( function(v) {
+			openkv.get_user( function(v) {
 				//alert( Object.toJSON(v) );
 				$("html").innerHTML = v["html"] + "<br>" + v["info"];
 			} );
