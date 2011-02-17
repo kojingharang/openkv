@@ -1,29 +1,35 @@
+console.log(document.url);
+
 // Set KVS server url to use.
 // @param[in] String url    KVS server to use.  example: http://example.com/openkv/service_name
-var RDict = function(baseurl, log_element)
+var OpenKV = function(uniq_id, log_element)
 {
-	//if(!baseurl) baseurl = "http://openkvs.appspot.com/openkv?s=example_service";
-	if(!baseurl) baseurl = "http://localhost:8888/openkv?s=example_service";
-	this.baseurl = baseurl;
-	this.server_root = "http://localhost:8888";
+	if(!(this instanceof OpenKV))
+	{
+		throw("called openkv constructor as if it were a function: missing 'new'.");
+	}
+	//this.baseurl = "http://openkvs.appspot.com/openkv?s="+uniq_id;
+	this.baseurl = "http://dev-2.openkvs.appspot.com/openkv?s="+uniq_id;
+	//this.baseurl = "http://localhost:8888/openkv?s="+uniq_id;
 	this.log_element = log_element;
+	this.uniq_id = uniq_id;
 };
 
 // rid -> {callback: callback, t: get|put }
-var RDict_context = {};
-var RDict_request_ID = 0;
-var RDict_global_callback = function(value)
+var openkv_context = {};
+var openkv_request_ID = 0;
+var openkv_global_callback = function(value)
 {
-	var context = RDict_context[ value["rid"] ];
+	var context = openkv_context[ value["rid"] ];
 	if(!context) return;
 	
 	var t = context["t"];
 	var callback = context["callback"];
-	var RDict_object = context["RDict_object"];
+	var openkv_object = context["openkv_object"];
 	
 	// for log
 	var s_value = Object.toJSON ? Object.toJSON(value) : "";
-	RDict_object.log("Response << " + s_value);
+	openkv_object.log("Response << " + s_value);
 	
 	if(value["result"]=="ERROR") return;
 	
@@ -66,7 +72,11 @@ var RDict_global_callback = function(value)
 };
 
 
-RDict.prototype = {
+OpenKV.prototype = {
+	local: function()
+	{
+		this.baseurl = "http://127.0.0.1:8888/openkv?s="+this.uniq_id;
+	},
 	log: function(message)
 	{
 		if(this.log_element) this.log_element.innerHTML += message + "\n";
@@ -84,7 +94,7 @@ RDict.prototype = {
 		// add random param to avoid be in cache
 		dict["random"] = Math.floor(Math.random()*65536);
 		
-		var param = "&callback=RDict_global_callback&rid="+RDict_request_ID+"&";
+		var param = "&callback=openkv_global_callback&rid="+openkv_request_ID+"&";
 		for(var k in dict)
 		{
 			param += k + "=" + dict[k] + "&";
@@ -98,9 +108,9 @@ RDict.prototype = {
 	},
 	save_context: function(action, callback)
 	{
-		RDict_request_ID++;
-		RDict_context[RDict_request_ID] = {"callback": callback, "t": action, "RDict_object": this};
-		//alert(Object.toJSON(RDict_context));
+		openkv_request_ID++;
+		openkv_context[openkv_request_ID] = {"callback": callback, "t": action, "openkv_object": this};
+		//alert(Object.toJSON(openkv_context));
 	},
 	
 	// Get user login information.
@@ -111,7 +121,7 @@ RDict.prototype = {
 		this.save_context("get_user", cont);
 		this.call_server({
 			"t": "get_user",
-			"server_root": this.server_root,
+			//"server_root": this.server_root,
 			"from": window.location.href
 		});
 	},

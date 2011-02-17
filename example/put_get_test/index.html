@@ -1,19 +1,21 @@
 <html>
 <head>
-	<script type="text/javascript" src="../prototype.js" charset="Shift_JIS"></script>
-	<script type="text/javascript" src="../../client/openkv.js" charset="Shift_JIS"></script>
+	<script type="text/javascript" src="../prototype.js"></script>
+	<script type="text/javascript" src="../../client/openkv.js"></script>
 	<script type="text/javascript">
+		var openkv = new OpenKV("example", $("log"));
+		//openkv.local();
+		
 		function test_put_and_get()
 		{
-			var dict = new RDict($("baseurl").value, $("log"));
-			dict.put("key0", $("input0").value, function() {
-				dict.get("key0", function(value) {
+			openkv.put("key0", $("input0").value, function() {
+				openkv.get("key0", function(value) {
 					$("output0").value = value;
 					$("test_result0").innerHTML = $("input0").value==$("output0").value ? "OK":"NG";
 				});
 			});
-			dict.put("key1", $("input1").value, function() {
-				dict.get("key1", function(value) {
+			openkv.put("key1", $("input1").value, function() {
+				openkv.get("key1", function(value) {
 					$("output1").value = value;
 					$("test_result1").innerHTML = $("input1").value==$("output1").value ? "OK":"NG";
 				});
@@ -21,13 +23,12 @@
 		}
 		function test_update()
 		{
-			var dict = new RDict($("baseurl").value, $("log"));
-			dict.put("key_for_update_test", $("update_before").value, function() {
-				dict.update("key_for_update_test", function(value, new_value) {
+			openkv.put("key_for_update_test", $("update_before").value, function() {
+				openkv.update("key_for_update_test", function(value, new_value) {
 					new_value(value + "_AFTER");
 					return 1;
 				}, function() {
-					dict.get("key_for_update_test", function(value) {
+					openkv.get("key_for_update_test", function(value) {
 						$("update_after").value = value;
 						$("update_test_result").innerHTML = (value==$("update_before").value+'_AFTER') ? "OK":"NG";
 					});
@@ -39,8 +40,6 @@
 <body>
 
 <table>
-<!-- <tr><td>BaseURL</td><td><input type="text" id="baseurl" size=80 value="http://openkvs.appspot.com/openkv?s=example_service"></td></tr> -->
-<tr><td>BaseURL</td><td><input type="text" id="baseurl" size=80 value="http://localhost:8888/openkv?s=example_service"></td></tr>
 <tr><td style="background-color: #C0C0C0">Put and Get Test</td><td></td></tr>
 <tr><td>Input</td><td><input type="text" id="input0" value="foo"><input type="text" id="input1" value="bar"></td></tr>
 <tr><td></td><td><button onClick="test_put_and_get();">Put and Get test</button></td></tr>

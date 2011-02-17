@@ -8,7 +8,7 @@ import javax.servlet.http.*;
 public class OpenKVServlet extends HttpServlet {
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		req.setCharacterEncoding("UTF-8");
-		resp.setContentType("application/json");
+		resp.setContentType("application/x-javascript");
 		resp.setCharacterEncoding("UTF-8");
 		
 		OpenKVController okvc = new OpenKVController();
