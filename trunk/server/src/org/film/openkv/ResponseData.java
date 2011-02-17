@@ -14,7 +14,7 @@ public class ResponseData {
 	public static final String OKCODE = "OK";
 	public static final String MSG_OK = "OK";
 	public static final String MSG_NG = "NG";
-	private static final String DEFAULT_CALLBACK = "okv_callback";
+	private static final String DEFAULT_CALLBACK = "openkv_global_callback";
 	
 	private UserData userData = null;
 	private List<UserData> userDataList = null;
