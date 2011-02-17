@@ -1,5 +1,3 @@
-console.log(document.url);
-
 // Set KVS server url to use.
 // @param[in] String url    KVS server to use.  example: http://example.com/openkv/service_name
 var OpenKV = function(uniq_id, log_element)

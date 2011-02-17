@@ -17,7 +17,9 @@
 	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
-		var dict = new RDict("http://openkvs.appspot.com/openkv?s=example_tictactoe");
+		var openkv = new OpenKV("example_tictactoe", $("log"));
+		//openkv.local();
+		
 		//var g_myID = uniq_id("UserID");
 		//var g_myID = $(nickname).value;
 		var g_myID = "";
@@ -51,7 +53,7 @@
 		{
 			//alert("try_to_start_game");
 			// check g_myID status. if other side starts game, get g_gameID.
-			dict.get("gameID_"+g_myID, function(value) {
+			openkv.get("gameID_"+g_myID, function(value) {
 				//alert("gameID_g_myID: "+value);
 				if(value)
 				{
@@ -66,7 +68,7 @@
 				}
 				
 				// get ID list
-				dict.get("lobby", function(value) {
+				openkv.get("lobby", function(value) {
 					var lobby = [];
 					try {
 						lobby = eval("("+value+")");
@@ -91,7 +93,7 @@
 							// remove g_myID from lobby
 							for(var j=0;j<lobby.length;j++) if(lobby[j]==g_myID) lobby.splice(j, 1);
 							
-							dict.put("lobby", Object.toJSON(lobby), function(){
+							openkv.put("lobby", Object.toJSON(lobby), function(){
 								//alert("updated lobby: "+Object.toJSON(lobby));
 								start_game(g_myID, g_otherID);
 								play(cont);
@@ -104,7 +106,7 @@
 					{
 						lobby.unshift(g_myID);
 						while(lobby.length>10) lobby.pop();
-						dict.put("lobby", Object.toJSON(lobby), function(){
+						openkv.put("lobby", Object.toJSON(lobby), function(){
 							//alert("updated lobby: "+Object.toJSON(lobby));
 							cont();
 						});
@@ -120,8 +122,8 @@
 		function resetGame()
 		{
 			g_gameID = "";
-			dict.put("gameID_"+g_myID, g_gameID);
-			dict.put("gameID_"+g_otherID, g_gameID);
+			openkv.put("gameID_"+g_myID, g_gameID);
+			openkv.put("gameID_"+g_otherID, g_gameID);
 			g_watchdog = [];
 		}
 		function start_game(myID, otherID)
@@ -143,10 +145,10 @@
 			g_gameState["image"][otherID] = my_image==1 ? 2 : 1;
 			
 			//alert("other: "+Object.toJSON(g_gameState));
-			dict.put(g_gameID, Object.toJSON(g_gameState));
+			openkv.put(g_gameID, Object.toJSON(g_gameState));
 			// update state of two by g_gameID
-			dict.put("gameID_"+myID, g_gameID);
-			dict.put("gameID_"+otherID, g_gameID);
+			openkv.put("gameID_"+myID, g_gameID);
+			openkv.put("gameID_"+otherID, g_gameID);
 		}
 		
 		function play(cont)
@@ -154,8 +156,8 @@
 			//alert("play");
 			
 			// Watch dog timer
-			dict.put("watchdog_"+g_myID, Math.floor( Math.random() * 10000 ));
-			dict.get("watchdog_"+g_otherID, function(value) {
+			openkv.put("watchdog_"+g_myID, Math.floor( Math.random() * 10000 ));
+			openkv.get("watchdog_"+g_otherID, function(value) {
 				g_watchdog.push(value);
 				while(g_watchdog.length>5) g_watchdog.shift();
 				if(g_watchdog.length < 5) return;
@@ -167,7 +169,7 @@
 				resetGame();
 			});
 			
-			dict.get(g_gameID, function(value) {
+			openkv.get(g_gameID, function(value) {
 				var gameState = {};
 				try {
 					gameState = eval("("+value+")");
@@ -242,7 +244,7 @@
 			setField();
 			
 			g_gameState["turn"] = g_otherID;
-			dict.put(g_gameID, Object.toJSON(g_gameState), function() {
+			openkv.put(g_gameID, Object.toJSON(g_gameState), function() {
 				//alert("updated g_gameState");
 			});
 		}
@@ -255,7 +257,7 @@
 			g_myID = $("nickname").value;
 			resetGame();
 		}
-		//alert(dict.toString());
+		//alert(openkv.toString());
 	</script>
 </head>
 <body style="" onLoad="javascript:initName();setField();main();">

@@ -31,7 +31,8 @@
 	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
-		var dict = new RDict();
+		var openkv = new OpenKV("example", $("log"));
+		//openkv.local();
 		
 		function post()
 		{
@@ -41,14 +42,14 @@
 			};
 			//alert("postdata: "+ postdata);
 			
-			dict.add(postdata, function() {
+			openkv.add(postdata, function() {
 				show_posts();
 				$("content").value="";
 			});
 		}
 		function show_posts()
 		{
-			dict.search("", function(value) {
+			openkv.search("", function(value) {
 				var render = [];
 				for(var i=0;i<value.length;i++)
 				{
@@ -62,7 +63,7 @@
 		{
 			$("char_left_notice").innerHTML = 140 - $("content").value.length;
 		}
-		//alert(dict.toString());
+		//alert(openkv.toString());
 		function setting_toggle()
 		{
 			if($("setting_view").style.display == "none")
@@ -84,15 +85,15 @@
 		}
 		function setting_save()
 		{
-			dict.put("nickname", $("nickname").value);
+			openkv.put("nickname", $("nickname").value);
 		}
 		function setting_load()
 		{
-			dict.get("nickname", function(value) { $("nickname").value = value; } );
+			openkv.get("nickname", function(value) { $("nickname").value = value; } );
 		}
 		function body_init()
 		{
-			dict.get_user(function(value){ $("login_info").innerHTML = value["html"]; });
+			openkv.get_user(function(value){ $("login_info").innerHTML = value["html"]; });
 			setting_load();
 			show_posts();
 			setInterval('update_char_left_notice()', 500);
