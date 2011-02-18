@@ -1,13 +1,18 @@
 <html>
 <head>
-	<script type="text/javascript" src="../prototype.js"></script>
 	<script type="text/javascript" src="../../client/openkv.js"></script>
 	<script type="text/javascript">
+		function $(el) { return document.getElementById(el); }
 		var openkv = new OpenKV("example", $("log"));
-		//openkv.local();
+		openkv.local();
 		
-		function test_put_and_get()
+		function make_random_string(n) { var r=""; while(n--) r+=String.fromCharCode(0x41+Math.floor(Math.random()*26)); return r; }
+		function test_put_and_get_string()
 		{
+			var s0 = make_random_string(6);
+			var s1 = make_random_string(6);
+			$("input0").value = s0;
+			$("input1").value = s1;
 			openkv.put("key0", $("input0").value, function() {
 				openkv.get("key0", function(value) {
 					$("output0").value = value;
@@ -21,16 +26,36 @@
 				});
 			});
 		}
+		function test_put_and_get_array()
+		{
+			var data = [0, 0, 0, 0, 0];
+			for(var i=0;i<data.length;i++) data[i] = Math.floor(Math.random()*100);
+			
+			openkv.put("key2", data, function() {
+				openkv.get("key2", function(value) {
+					console.log(value);
+					var ok = 1;
+					for(var i=0;i<data.length;i++) if(data[i] != value[i]) ok=0;
+					
+					$("array_output").value = openkv.JSON.stringify(value);
+					$("test_result2").innerHTML = ok ? "OK":"NG";
+				});
+			});
+		}
 		function test_update()
 		{
+			var s0 = make_random_string(6);
+			var s1 = make_random_string(6);
+			$("update_before").value = s0;
+			
 			openkv.put("key_for_update_test", $("update_before").value, function() {
 				openkv.update("key_for_update_test", function(value, new_value) {
-					new_value(value + "_AFTER");
+					new_value(value + s1);
 					return 1;
 				}, function() {
 					openkv.get("key_for_update_test", function(value) {
 						$("update_after").value = value;
-						$("update_test_result").innerHTML = (value==$("update_before").value+'_AFTER') ? "OK":"NG";
+						$("update_test_result").innerHTML = (value==$("update_before").value+s1) ? "OK":"NG";
 					});
 				});
 			});
@@ -40,11 +65,17 @@
 <body>
 
 <table>
-<tr><td style="background-color: #C0C0C0">Put and Get Test</td><td></td></tr>
+<tr><td style="background-color: #C0C0C0">Put and Get Test(string)</td><td></td></tr>
+<tr><td></td><td><button onClick="test_put_and_get_string();">Put and Get(string) test</button></td></tr>
 <tr><td>Input</td><td><input type="text" id="input0" value="foo"><input type="text" id="input1" value="bar"></td></tr>
-<tr><td></td><td><button onClick="test_put_and_get();">Put and Get test</button></td></tr>
 <tr><td>Output</td><td><input type="text" id="output0"><input type="text" id="output1"></td></tr>
 <tr><td>Test result</td><td><span style="color: red;" id="test_result0"></span><span style="color: red;" id="test_result1"></span></td></tr>
+
+<tr><td style="background-color: #C0C0C0">Put and Get Test(array)</td><td></td></tr>
+<tr><td></td><td><button onClick="test_put_and_get_array();">Put and Get(array) test</button></td></tr>
+<tr><td>Output</td><td><input type="text" id="array_output"></td></tr>
+<tr><td>Test result</td><td><span style="color: red;" id="test_result2"></span></td></tr>
+
 <tr><td style="background-color: #C0C0C0">Update Test</td><td></td></tr>
 <tr><td>Data</td><td><input type="text" id="update_before" value='BEFORE'><input type="text" id="update_after" value=""></td></tr>
 <tr><td></td><td><button onClick="test_update();">Update test</button></td></tr>

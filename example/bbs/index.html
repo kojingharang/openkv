@@ -28,9 +28,9 @@
 	
 	-->
 	</style>
-	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
+		function $(el) { return document.getElementById(el); }
 		var openkv = new OpenKV("example", $("log"));
 		//openkv.local();
 		
