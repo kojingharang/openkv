@@ -14,11 +14,11 @@
 	}
 	-->
 	</style>
-	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
+		function $(el) { return document.getElementById(el); }
 		var openkv = new OpenKV("example_tictactoe", $("log"));
-		//openkv.local();
+		openkv.local();
 		
 		//var g_myID = uniq_id("UserID");
 		//var g_myID = $(nickname).value;
@@ -33,7 +33,7 @@
 		
 		function main()
 		{
-			//alert("begin main");
+			//console.log("begin main");
 			updateState();
 			var cont = function() {
 				//alert("end main");
@@ -51,28 +51,26 @@
 		
 		function try_to_start_game(cont)
 		{
-			//alert("try_to_start_game");
+			//console.log("try_to_start_game");
 			// check g_myID status. if other side starts game, get g_gameID.
 			openkv.get("gameID_"+g_myID, function(value) {
-				//alert("gameID_g_myID: "+value);
-				if(value)
+				//console.log("gameID_g_myID: "+value);
+				if(typeof value == "number")
 				{
-					//alert("set g_gameID"+value);
+					console.log("set g_gameID"+value);
 					g_gameID = value;
 				}
 				if(g_gameID)
 				{
-					//alert("g_gameID: "+g_gameID);
+					console.log("Play g_gameID: "+g_gameID);
 					play(cont);
 					return;
 				}
 				
 				// get ID list
 				openkv.get("lobby", function(value) {
-					var lobby = [];
-					try {
-						lobby = eval("("+value+")");
-					} catch(e) {}
+					var lobby = value;
+					console.log("lobby ", value);
 					
 					if(!lobby) lobby=[];
 					var myID_inserted = 0;
@@ -93,8 +91,8 @@
 							// remove g_myID from lobby
 							for(var j=0;j<lobby.length;j++) if(lobby[j]==g_myID) lobby.splice(j, 1);
 							
-							openkv.put("lobby", Object.toJSON(lobby), function(){
-								//alert("updated lobby: "+Object.toJSON(lobby));
+							openkv.put("lobby", lobby, function(){
+								console.log("updated lobby: ", lobby);
 								start_game(g_myID, g_otherID);
 								play(cont);
 							});
@@ -106,8 +104,8 @@
 					{
 						lobby.unshift(g_myID);
 						while(lobby.length>10) lobby.pop();
-						openkv.put("lobby", Object.toJSON(lobby), function(){
-							//alert("updated lobby: "+Object.toJSON(lobby));
+						openkv.put("lobby", lobby, function(){
+							console.log("updated lobby: ", lobby);
 							cont();
 						});
 					}
@@ -145,7 +143,7 @@
 			g_gameState["image"][otherID] = my_image==1 ? 2 : 1;
 			
 			//alert("other: "+Object.toJSON(g_gameState));
-			openkv.put(g_gameID, Object.toJSON(g_gameState));
+			openkv.put(g_gameID, g_gameState);
 			// update state of two by g_gameID
 			openkv.put("gameID_"+myID, g_gameID);
 			openkv.put("gameID_"+otherID, g_gameID);
@@ -165,15 +163,12 @@
 				{
 					if(g_watchdog[0]!=g_watchdog[i]) return;
 				}
-				// disconnected
+				// values stay same during 5 seconds. disconnect.
 				resetGame();
 			});
 			
 			openkv.get(g_gameID, function(value) {
-				var gameState = {};
-				try {
-					gameState = eval("("+value+")");
-				} catch(e) {}
+				var gameState = value;
 				g_gameState = gameState;
 				if(!gameState) { cont(); return; }
 				var field = gameState["field"];
@@ -207,7 +202,7 @@
 			s.push("g_watchdog: "+g_watchdog.join(", "));
 			if(g_gameState)
 			{
-				s.push(Object.toJSON(g_gameState));
+				s.push(g_gameState);
 				//s.push("Turn: "+g_gameState["turn"]);
 				//s.push("("+(g_gameState["turn"]==g_myID ? "You":"Other side")+")");
 			}
@@ -244,8 +239,8 @@
 			setField();
 			
 			g_gameState["turn"] = g_otherID;
-			openkv.put(g_gameID, Object.toJSON(g_gameState), function() {
-				//alert("updated g_gameState");
+			openkv.put(g_gameID, g_gameState, function() {
+				//console.log("updated g_gameState");
 			});
 		}
 		function initName()
@@ -290,6 +285,7 @@ vs
 
 <span id="state"></span>
 
+<div id="log"></div>
 
 <br>
 <br>

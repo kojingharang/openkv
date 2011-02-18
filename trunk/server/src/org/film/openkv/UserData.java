@@ -61,15 +61,15 @@ public class UserData {
 	public void setPropertiesFromJSON(String json) {
 		System.out.println("JSON: "+json);
 		Map<String, Object> map = new HashMap<String, Object>();
-		try {
-			map = JSON.decode(json, Map.class);
-		} catch(JSONException e) {
-			//e.printStackTrace();
-			
-			// add json string to map on json decode error.
-			map.put("_scalar_value_", json);
-		}
-		
+//		try {
+//			map = JSON.decode(json, Map.class);
+//		} catch(JSONException e) {
+//			//e.printStackTrace();
+//			
+//			// add json string to map on json decode error.
+//			map.put("_scalar_value_", json);
+//		}
+		map.put("value", json);
 		this.properties.putAll(map);
 	}
 	

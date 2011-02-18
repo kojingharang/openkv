@@ -3,9 +3,9 @@
 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja">
 <head>
-	<script type="text/javascript" src="../prototype.js" charset="UTF-8"></script>
 	<script type="text/javascript" src="../../client/openkv.js" charset="UTF-8"></script>
 	<script type="text/javascript">
+		function $(el) { return document.getElementById(el); }
 		var openkv = new OpenKV("example", $("log"));
 		//openkv.local();
 		
