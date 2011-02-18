@@ -4,7 +4,7 @@
 	<script type="text/javascript">
 		function $(el) { return document.getElementById(el); }
 		var openkv = new OpenKV("example", $("log"));
-		openkv.local();
+		//openkv.local();
 		
 		function make_random_string(n) { var r=""; while(n--) r+=String.fromCharCode(0x41+Math.floor(Math.random()*26)); return r; }
 		function test_put_and_get_string()
