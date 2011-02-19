@@ -39,7 +39,7 @@ var openkv_global_callback = function(value)
 		{
 			try
 			{
-				console.log("decode ", value);
+				//console.log("decode ", value);
 				return openkv_object.JSON.parse(value);
 			}
 			catch(e) { return undefined };
@@ -89,7 +89,7 @@ OpenKV.prototype = {
 	},
 	loadJSONP: function(url)
 	{
-		console.log("loadJSONP: "+url);
+		//console.log("loadJSONP: "+url);
 		this.log("Request >> " + url);
 		var objScript = document.createElement("script");
 		objScript.src = url;
