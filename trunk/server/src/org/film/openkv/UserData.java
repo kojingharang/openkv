@@ -57,7 +57,6 @@ public class UserData {
 
 	}
 	
-	@SuppressWarnings("unchecked")
 	public void setPropertiesFromJSON(String json) {
 		System.out.println("JSON: "+json);
 		Map<String, Object> map = new HashMap<String, Object>();
@@ -97,14 +96,14 @@ public class UserData {
 		// set properties to an entity
 		for(Map.Entry<String, Object> entry : properties.entrySet()) {
 			Object value = null;
-			if(entry.getKey().startsWith("text_")) {
-				value = new Text((String)entry.getValue());
+			if(entry.getKey().startsWith("index_")) {
+				value = entry.getValue();
 			}
 			else if(entry.getKey().startsWith("int_")) {
 				value = Integer.valueOf(entry.getValue().toString());
 			}
 			else {
-				value = entry.getValue();
+				value = new Text((String)entry.getValue());
 			}
 			entity.setProperty(entry.getKey(), value);
 		}
